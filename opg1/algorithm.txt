@@ -1,0 +1,35 @@
+command 1 | command 2 | .. | command n
+
+input = STDIN
+
+while has_piping_char(command):
+	this_command = parse_command(command)
+
+	fd[0], fd[1] = make_pipe() (pipe from fd[1] to fd[0])
+	process = fork()
+
+	if process == child:
+		duplicate(input to STDIN) //dup2
+		duplicate(fd[1] to STDOUT)
+		close(fd[0])
+		execute(this_command)
+		stop_process()
+
+	else if process == parent:
+		duplicate(fd[0] to input)
+		close(fd[1])
+		wait_for_child()
+
+	command = rest_after(this_command)
+
+process = fork()
+
+if process == child:
+	duplicate(input to STDIN)
+	execute(command)
+	stop_process()
+
+else if process == parent:
+	close(input)
+	wait_for_child()
+	reset(bp)
