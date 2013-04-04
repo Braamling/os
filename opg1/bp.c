@@ -12,11 +12,41 @@
 #include <string.h>
 #include "bp.h"
 
-int execute_command(unsigned char *command_line) {
+/* Construct an instruction.
+ *
+ * Returns NULL on failure, a pointer to the newly created instruction on
+ * success. */
+instruction *create_instruction(char *command, char *arguments) {
+	instruction *instr;
+
+	instr = malloc(sizeof(instruction));
+	if (instr == NULL)
+		return NULL;
+
+	instr->command = command;
+	instr->arguments = arguments;
+
+	return instr;
+}
+
+/* Destroy an instruction.
+ *
+ * Returns 0 if the given instruction is a NULL pointer, returns 1 on
+ * success. */
+int destroy_instruction(instruction *instr) {
+	if (instr == NULL)
+		return 0;
+
+	free(instr);
+
+	return 1;
+}
+
+int execute_commands(char **commands, char *arguments) {
 	return 0;
 }
 
-int parse_command(unsigned char *command_line) {
+int parse_command(char *command_line) {
 	char test[39]= "test test | test tst | tet test \n";
 	unsigned char *args[10] = {NULL}; 
 					 /* This is not really elegant, but
@@ -55,7 +85,7 @@ int parse_command(unsigned char *command_line) {
 
 	printf("%s, %s, %s", args[0], args[1], args[2]);
 	//strtok(test, '|');
-
+	
 	return 0;
 }
 
