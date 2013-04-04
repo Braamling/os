@@ -1,13 +1,13 @@
 CC=gcc
-CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb -D_GNU_SOURCE
+CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-scanner: scanner.c
-	$(CC) $(CFLAGS) -o $@
+bp: bp.c
+	$(CC) $^ $(CFLAGS) -o $@
 
-all: scanner
+all: bp
 
 clean:
 	rm -f *.o
