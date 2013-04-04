@@ -7,5 +7,5 @@ typedef struct instruction_struct {
 instruction *create_instruction(char *, char *);
 int destroy_instruction(instruction *);
 
-int execute_command(unsigned char *, unsigned char *);
-int parse_command(unsigned char *);
+int execute_command(char *, char *);
+int parse_command(char *);
