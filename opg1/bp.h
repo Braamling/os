@@ -1,2 +1,4 @@
+#define CHILD 0
+
 int execute_command(unsigned char *);
-int main(int, char *[]);
+int parse_command(unsigned char *);

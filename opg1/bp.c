@@ -17,6 +17,10 @@ int execute_command(unsigned char *command_line) {
 	return 0;
 }
 
+int parse_command(unsigned char *command_line) {
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	return 0;
 }
