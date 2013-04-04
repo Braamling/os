@@ -16,7 +16,7 @@
  *
  * Returns NULL on failure, a pointer to the newly created instruction on
  * success. */
-instruction *create_instruction(char *command, char *arguments) {
+instruction *create_instruction(char *command, char **arguments) {
 	instruction *instr;
 
 	instr = malloc(sizeof(instruction));
@@ -46,15 +46,15 @@ int execute_commands(char **commands, char *arguments) {
 	return 0;
 }
 
-int parse_command(char *command_line) {
-	char test[39]= "test test | test tst | tet test \n";
-	unsigned char *args[10] = {NULL}; 
-					 /* This is not really elegant, but
-					given the fact that we have a limited
-					input-line length, it cannot contain
-					more than half as many arguments as
-					characters */
-	char *temp_begin, *temp_end;
+instruction **parse_command(char *command_line) {
+	instruction **instructions;
+	int MAX_INSTRUCTIONS = 10;
+
+	instructions = malloc(sizeof(instruction) * MAX_INSTRUCTIONS);
+
+	char test[39]= "111 b111 b112 | 222 221 222 | 333 331 332 \n ";
+	char *args[10] = {NULL}; 
+	char *temp_command, *temp_argument, **temp_arguments[1024];
 	int i = 0;
 
 	if(args[i++] = strtok(test, "|")){
@@ -64,12 +64,20 @@ int parse_command(char *command_line) {
 
 	int j;
 
-	for (j = 0; j < i-1; j++)
-	{
-		printf("%s \n", strtok(args[j], " "));
-		printf("%s \n", strtok(NULL, "\0"));
-	}
+	for (j = 0; j < i-1; j++) {
+		int x = 0;
+		temp_command = strtok(args[j], " ");
+		temp_argument = strtok(NULL, "\0");
+		if(temp_arguments[x++] = strtok(temp_argument, " ")) {
+			while(temp_arguments[x++] = strtok(NULL, " "));
+		}
+		temp_arguments[x] = strtok(NULL, "\0");
+		temp_command = strdup(temp_command);
 
+
+		/* concat /bin/ */
+		instructions[j] = create_instruction(temp_command, temp_arguments);
+	}
 
 	//temp_end = strtok(test, "|");
 	//temp_begin = strtok(NULL, "|");
@@ -83,14 +91,14 @@ int parse_command(char *command_line) {
 		args[i++] = strtok(NULL, " ");
 	}*/
 
-	printf("%s, %s, %s", args[0], args[1], args[2]);
+	printf("%s, %s, %s\n", instructions[0]->arguments[1], instructions[1]->command, instructions[2]->command);
 	//strtok(test, '|');
-	
-	return 0;
+
+	return instructions;
 }
 
 int main(int argc, char *argv[]) {
-
+	parse_command("test");
 
 	return 0;
 }
