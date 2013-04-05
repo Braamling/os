@@ -187,27 +187,93 @@ int execute_commands(instruction **instrs, int n_instrs) {
 	return 1;
 }
 
-int parse_command(char *command_line) {
-	return 0;
+instruction **parse_command(char *command_line) {
+	instruction **instructions;
+	int MAX_INSTRUCTIONS = 10;
+
+	instructions = malloc(sizeof(instruction) * MAX_INSTRUCTIONS);
+
+	char *test= "111 b111 b112 | 222 221 222 | 333 331 332 \n";
+	char *args[10] = {NULL}; 
+	char *temp_command, *temp_argument, **temp_arguments[1024];
+	int i = 0;
+
+	if (args[i++] = strtok(test, "|")) {
+		while(args[i++] = strtok(NULL, "|"));
+	}
+
+	args[i] = strtok(NULL, "\n");
+
+	int j;
+
+	for (j = 0; j < (i - 1); j++) {
+		int x = 0;
+
+		temp_command = strtok(args[j], " ");
+		temp_argument = strtok(NULL, "\0");
+
+		if (temp_arguments[x++] = strtok(temp_argument, " ")) {
+			while (temp_arguments[x++] = strtok(NULL, " "));
+		}
+
+		temp_arguments[x] = strtok(NULL, "\0");
+		temp_command = strdup(temp_command);
+
+
+		/* concat /bin/ */
+		instructions[j] = create_instruction(temp_command, temp_arguments);
+	}
+
+	//temp_end = strtok(test, "|");
+	//temp_begin = strtok(NULL, "|");
+
+	/* while (temp = strtok(NULL, "|")) {
+		args[i++] = strtok(temp, " ");
+		args[i++] = strtok(NULL, " ");
+	}
+	if (temp = strtok(NULL, "\n")) {
+		args[i++] = strtok(temp, " ");
+		args[i++] = strtok(NULL, " ");
+	}*/
+
+	printf("%s, %s, %s\n", instructions[0]->arguments[1],
+			instructions[1]->command, instructions[2]->command);
+	//strtok(test, '|');
+
+	return instructions;
 }
 
 int main(int argc, char *argv[]) {
+
+	/* Example instruction chain. */
+
 	instruction *instrs[2];
-	char *args_0[2], *args_1[3];
+	char *args_0[3], *args_1[3], *args_2[3];
 
 	args_0[0] = "ls";
-	args_0[1] = NULL;
+	args_0[1] = "-al";
+	args_0[2] = NULL;
+
 	args_1[0] = "grep";
 	args_1[1] = "bp";
 	args_1[2] = NULL;
 
+	args_2[0] = "grep";
+	args_2[1] = "c";
+	args_2[2] = NULL;
+
 	instrs[0] = create_instruction("/bin/ls", args_0);
 	instrs[1] = create_instruction("/bin/grep", args_1);
+	instrs[2] = create_instruction("/bin/grep", args_2);
 
-	execute_commands(instrs, 2);
+	execute_commands(instrs, 3);
 
 	destroy_instruction(instrs[0]);
 	destroy_instruction(instrs[1]);
+	destroy_instruction(instrs[2]);
+
+	/* Parse command testing. */
+	// parse_command("test");
 
 	return 0;
 }

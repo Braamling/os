@@ -9,4 +9,4 @@ instruction *create_instruction(char *, char **);
 int destroy_instruction(instruction *);
 
 int execute_commands(instruction **, int);
-int parse_command(char *);
+instruction **parse_command(char *);
