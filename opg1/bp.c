@@ -29,10 +29,12 @@ instruction *create_instruction(char *command, char **arguments) {
 	instr->command = command;
 	instr->arguments = arguments;
 
+	instr->child = NULL;
+
 	return instr;
 }
 
-/* Destroy an instruction.
+/* Destroy an instruction, destroying its child recursively.
  *
  * Returns 0 if the given instruction is a NULL pointer, returns 1 on
  * success. */
@@ -40,16 +42,17 @@ int destroy_instruction(instruction *instr) {
 	if (instr == NULL)
 		return 0;
 
+	destroy_instruction(instr->child);
+
 	free(instr);
 
 	return 1;
 }
 
-int execute_commands(instruction **instrs, int n_instrs) {
-	int i, input;
-	pid_t pid;
-	instruction *instr;
+int execute_commands(instruction *instr) {
+	int input;
 	int fd[2];
+	pid_t pid;
 
 	/* This variable is used to pass on the output from a previous command to
 	 * the current command as input. As the first command executed needs no
@@ -59,15 +62,18 @@ int execute_commands(instruction **instrs, int n_instrs) {
 	/* The last process doesn't need to redirect its output to the next
 	 * process, Therefore it is handled seperately, after every other piping
 	 * instruction. */
-	for (i = 0; i < (n_instrs - 1); i ++) {
+	for (; instr != NULL; instr = instr->child) {
 
-		instr = instrs[i];
+		/* The last command in the list doesn't need a pipe. */
+		if (instr->child != NULL) {
 
-		/* Create a pipe from file 1 to file 0. On failure, the process is
-		 * terminated. */
-		if (pipe(fd) == -1) {
-			perror("Error creating pipe");
-			return 0;
+			/* Create a pipe from file 1 to file 0. On failure, the process is
+			 * terminated. */
+			if (pipe(fd) == -1) {
+				perror("Error creating pipe");
+				return 0;
+			}
+
 		}
 
 		/* Fork the process. The child links the appropriate file descriptors
@@ -95,17 +101,22 @@ int execute_commands(instruction **instrs, int n_instrs) {
 				return 0;
 			}
 
-			/* Duplicate fd 1 to STDOUT. On failure, the process is
-			 * terminated. */
-			if (dup2(fd[1], STDOUT_FILENO) == -1) {
-				perror("Error duplicating fd 1 to STDOUT");
-				return 0;
-			}
+			/* The last command in the list does not need to redirect
+			 * output. */
+			if (instr->child != NULL) {
 
-			/* Close fd 0. On failure, the process is terminated. */
-			if (close(fd[0]) == -1) {
-				perror("Error closing fd 0");
-				return 0;
+				/* Duplicate fd 1 to STDOUT. On failure, the process is
+				 * terminated. */
+				if (dup2(fd[1], STDOUT_FILENO) == -1) {
+					perror("Error duplicating fd 1 to STDOUT");
+					return 0;
+				}
+
+				/* Close fd 0. On failure, the process is terminated. */
+				if (close(fd[0]) == -1) {
+					perror("Error closing fd 0");
+					return 0;
+				}
 			}
 
 			/* Execute the command. On failure, the process is terminated. */
@@ -116,12 +127,9 @@ int execute_commands(instruction **instrs, int n_instrs) {
 		}
 		else {
 
-			/* Duplicate file 0 to input. On failure, the process is
-			 * terminated. */
-			// if (dup2(fd[0], input) == -1) {
-			// 	perror("Error duplicating input to file 1");
-			// 	return 0;
-			// }
+			/* The last command closes input, not fd[1]. */
+			if (instr->child == NULL)
+				fd[1] = input;
 
 			/* Close file 1. On failure, the process is terminated. */
 			if (close(fd[1]) == -1) {
@@ -136,51 +144,10 @@ int execute_commands(instruction **instrs, int n_instrs) {
 				return 0;
 			}
 
-			/* Make input file the output from the executed command. */
-			input = fd[0];
-		}
-	}
-
-	/* Execute the last command. Now the output doesn't need to be stored, but
-	 * can just go directly to STDOUT. The output from the last command does
-	 * need to be duplicated to STDIN though. */
-	instr = instrs[n_instrs - 1];
-
-	/* Fork the process. On failure, the process is terminated. */
-	pid = fork();
-	if (pid == -1) {
-		perror("Error forking the process");
-		return 0;
-	}
-
-	if (pid == CHILD) {
-
-		/* Duplicate the input file to STDIN. On failure, the process is
-		 * terminated. */
-		if (dup2(input, STDIN_FILENO) == -1) {
-			perror("Error duplicating input file to STDIN");
-			return 0;
-		}
-
-		/* Execute the command. On failure, the process is terminated. */
-		if (execvp(instr->command, instr->arguments) == -1) {
-			perror("Error executing command");
-			return 0;
-		}
-	}
-	else {
-
-		/* Close the input file. On failure, the process is terminated. */
-		if (close(input) == -1) {
-			perror("Error closing input file");
-			return 0;
-		}
-
-		/* Wait for the child to finish. On failure, the process is
-		 * terminated. */
-		if (wait(NULL) == -1) {
-			printf("Error waiting for child process.\n");
-			return 0;
+			/* Make input file the output from the executed command if the
+			 * the instruction is not the latest. */
+			if (instr->child != NULL)
+				input = fd[0];
 		}
 	}
 
@@ -189,31 +156,32 @@ int execute_commands(instruction **instrs, int n_instrs) {
 
 instruction **parse_command(char *command_line) {
 	instruction **instructions;
-	int MAX_INSTRUCTIONS = 10;
+	char *test, *temp_command, *temp_argument;
+	char *temp_arguments[1024];
+	int i, j, x;
+
+	char *args[10] = {NULL}; 
 
 	instructions = malloc(sizeof(instruction) * MAX_INSTRUCTIONS);
 
-	char *test= "111 b111 b112 | 222 221 222 | 333 331 332 \n";
-	char *args[10] = {NULL}; 
-	char *temp_command, *temp_argument, **temp_arguments[1024];
-	int i = 0;
+	test = "111 b111 b112 | 222 221 222 | 333 331 332 \n";
+	
+	i = 0;
 
-	if (args[i++] = strtok(test, "|")) {
-		while(args[i++] = strtok(NULL, "|"));
+	if (args[i ++] = strtok(test, "|")) {
+		while (args[i ++] = strtok(NULL, "|"));
 	}
 
 	args[i] = strtok(NULL, "\n");
 
-	int j;
-
-	for (j = 0; j < (i - 1); j++) {
-		int x = 0;
+	for (j = 0; j < (i - 1); j ++) {
+		x = 0;
 
 		temp_command = strtok(args[j], " ");
 		temp_argument = strtok(NULL, "\0");
 
-		if (temp_arguments[x++] = strtok(temp_argument, " ")) {
-			while (temp_arguments[x++] = strtok(NULL, " "));
+		if (temp_arguments[x ++] = strtok(temp_argument, " ")) {
+			while (temp_arguments[x ++] = strtok(NULL, " "));
 		}
 
 		temp_arguments[x] = strtok(NULL, "\0");
@@ -247,7 +215,7 @@ int main(int argc, char *argv[]) {
 
 	/* Example instruction chain. */
 
-	instruction *instrs[2];
+	instruction *root, *instr;
 	char *args_0[3], *args_1[3], *args_2[3];
 
 	args_0[0] = "ls";
@@ -262,17 +230,16 @@ int main(int argc, char *argv[]) {
 	args_2[1] = "c";
 	args_2[2] = NULL;
 
-	instrs[0] = create_instruction("/bin/ls", args_0);
-	instrs[1] = create_instruction("/bin/grep", args_1);
-	instrs[2] = create_instruction("/bin/grep", args_2);
+	root = create_instruction("/bin/ls", args_0);
+	instr = (root->child) = create_instruction("/bin/grep", args_1);
+	instr->child = create_instruction("/bin/grep", args_2);
 
-	execute_commands(instrs, 3);
+	execute_commands(root);
 
-	destroy_instruction(instrs[0]);
-	destroy_instruction(instrs[1]);
-	destroy_instruction(instrs[2]);
+	destroy_instruction(root);
 
 	/* Parse command testing. */
+
 	// parse_command("test");
 
 	return 0;
