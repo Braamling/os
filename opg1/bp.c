@@ -154,68 +154,105 @@ int execute_commands(instruction *instr) {
 	return 1;
 }
 
-instruction **parse_command(char *command_line) {
-	instruction **instructions;
-	char *test, *temp_command, *temp_argument;
-	char *temp_arguments[1024];
-	int i, j, x;
+/* Parse command uses the user input and create seprate 
+ * commands and arguments. 
+ * The user input as an char pointer has to be given as an argument.
+ * The function will return the first instruction of a linked list with
+ * instruction structs. 
+ * When a bad command format is found a NULL will be returned.
+ */
+instruction *parse_command(char *command_line) {
+	instruction *temp_instruction, *first_instruction;
+	char *temp_command, *temp_arguments[1024], *args[100];
+	int i, j, x, child, cmd_len;
 
-	char *args[10] = {NULL}; 
+	temp_instruction = malloc(sizeof(instruction));
 
-	instructions = malloc(sizeof(instruction) * MAX_INSTRUCTIONS);
-
-	test = "111 b111 b112 | 222 221 222 | 333 331 332 \n";
-	
 	i = 0;
 
-	if (args[i ++] = strtok(test, "|")) {
-		while (args[i ++] = strtok(NULL, "|"));
+	/* Split up all the command seperated with a pipe character */
+	args[i] = strtok(command_line,"|");
+
+	while (args[i++] != NULL) {
+		printf("[debug]command:\t %s\n",args[i-1]);
+		args[i] = strtok(NULL,"|");
 	}
 
-	args[i] = strtok(NULL, "\n");
-
+	/* Split up all commands and arguments from each pipe.
+	 */
+	child = 0;
 	for (j = 0; j < (i - 1); j ++) {
 		x = 0;
 
-		temp_command = strtok(args[j], " ");
-		temp_argument = strtok(NULL, "\0");
+		temp_arguments[x] = strtok(args[j]," ");
 
-		if (temp_arguments[x ++] = strtok(temp_argument, " ")) {
-			while (temp_arguments[x ++] = strtok(NULL, " "));
+		/* Put all arguments in an array */
+		while (temp_arguments[x++] != NULL) {
+			printf("[debug]arg:\t %s\n", temp_arguments[x-1]);
+			temp_arguments[x] = strtok(NULL," ");
 		}
 
-		temp_arguments[x] = strtok(NULL, "\0");
-		temp_command = strdup(temp_command);
+		/* Check whether the command was found. */
+		if(temp_arguments[0] != NULL) {
+			cmd_len = strlen(temp_arguments[0]) + 5;
+			temp_command = malloc(sizeof(char) * cmd_len);
+			strcpy(temp_command, "/bin/");
+			strcat(temp_command, temp_arguments[0]);
+		}
+		else {
+			printf("Bad command given\n");
+			return NULL;
+		}
+		
+		/* Check whether the command is the first in a serie of pipes to
+		 * create a correct linked list.
+		 */
+		if(child) {
+			temp_instruction->child = create_instruction(temp_command, temp_arguments);
+			temp_instruction = temp_instruction->child;
 
+		}
+		else {
+			temp_instruction = create_instruction(temp_command, temp_arguments);
+			first_instruction = temp_instruction;
+			child = 1;
+		}
+	}
+	return first_instruction;
+}
 
-		/* concat /bin/ */
-		instructions[j] = create_instruction(temp_command, temp_arguments);
+/* Reads the user's input. Returns a string with the input.
+ */
+char *read_line(char *dir){
+	char buffer[128], *input;
+	int buffer_size, size, i;
+	printf("%s $ ",dir);
+	fgets(buffer, sizeof(buffer), stdin);
+
+	buffer_size = strlen(buffer);
+
+	size 	= (sizeof(char) * buffer_size);
+	input 	= malloc(size);
+
+	/* Remove the newline character read by fgets. */
+	for(i = 0; i < buffer_size; i++) {
+		if(buffer[i] != '\n'){
+			input[i] = buffer[i];
+		}else {
+			input[i] = '\0';
+			break;
+		}
 	}
 
-	//temp_end = strtok(test, "|");
-	//temp_begin = strtok(NULL, "|");
-
-	/* while (temp = strtok(NULL, "|")) {
-		args[i++] = strtok(temp, " ");
-		args[i++] = strtok(NULL, " ");
-	}
-	if (temp = strtok(NULL, "\n")) {
-		args[i++] = strtok(temp, " ");
-		args[i++] = strtok(NULL, " ");
-	}*/
-
-	printf("%s, %s, %s\n", instructions[0]->arguments[1],
-			instructions[1]->command, instructions[2]->command);
-	//strtok(test, '|');
-
-	return instructions;
+	return input;
 }
 
 int main(int argc, char *argv[]) {
-
+	instruction *first_instruction;
+	char *user_input;
 	/* Example instruction chain. */
 
-	instruction *root, *instr;
+/*	instruction *root, *instr;
 	char *args_0[3], *args_1[3], *args_2[3];
 
 	args_0[0] = "ls";
@@ -236,11 +273,21 @@ int main(int argc, char *argv[]) {
 
 	execute_commands(root);
 
-	destroy_instruction(root);
+	destroy_instruction(root);*/
+
 
 	/* Parse command testing. */
+	while(1) {
+		user_input = read_line("bram@BramLinuxMint ~/Dropbox/Opdrachten/Besturingssystemen/os/opg1");
+		printf("[info]executing: %s \n", user_input);
 
-	// parse_command("test");
+		first_instruction = parse_command(user_input);
+
+		execute_commands(first_instruction);
+		destroy_instruction(first_instruction);
+
+		free(user_input);
+	}
 
 	return 0;
 }

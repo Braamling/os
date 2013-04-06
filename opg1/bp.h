@@ -11,4 +11,5 @@ instruction *create_instruction(char *, char **);
 int destroy_instruction(instruction *);
 
 int execute_commands(instruction *);
-instruction **parse_command(char *);
+instruction *parse_command(char *command_line);
+char *read_line();
