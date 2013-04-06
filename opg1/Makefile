@@ -11,3 +11,6 @@ all: bp
 
 clean:
 	rm -f *.o
+
+run: bp
+	./bp
