@@ -10,6 +10,7 @@ typedef struct instruction_struct {
 instruction *create_instruction(char *, char **);
 int destroy_instruction(instruction *);
 
-int execute_commands(instruction *);
-instruction *parse_command(char *command_line);
+int execute_commands(instruction *, int);
+
+instruction *parse_command(char *);
 char *read_line();

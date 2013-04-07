@@ -49,109 +49,87 @@ int destroy_instruction(instruction *instr) {
 	return 1;
 }
 
-int execute_commands(instruction *instr) {
-	int input;
+int execute_commands(instruction *instr, int input_fd) {
 	int fd[2];
 	pid_t pid;
 
-	/* This variable is used to pass on the output from a previous command to
-	 * the current command as input. As the first command executed needs no
-	 * input from a previous command, this is set to STDIN. */
-	input = STDIN_FILENO;
+	/* The last command in the list outputs to STDOUT, so redirecting output is
+	 * only necessary for instructions before the last one. */
+	if (instr->child != NULL) {
 
-	/* The last process doesn't need to redirect its output to the next
-	 * process, Therefore it is handled seperately, after every other piping
-	 * instruction. */
-	for (; instr != NULL; instr = instr->child) {
-
-		/* The last command in the list doesn't need a pipe. */
-		if (instr->child != NULL) {
-
-			/* Create a pipe from file 1 to file 0. On failure, the process is
-			 * terminated. */
-			if (pipe(fd) == -1) {
-				perror("Error creating pipe");
-				return 0;
-			}
-
-		}
-
-		/* Fork the process. The child links the appropriate file descriptors
-		 * to STDIN and STDOUT. On failure, the process is terminated. */
-		pid = fork();
-		if (pid == -1) {
-			perror("Error forkin process");
-			return 0;
-		}
-
-		/* The child process will duplicate the contents of the input file to
-		 * STDIN. The command that will be executed will then use this as its
-		 * input. The beginning of the pipe to fd 0 (fd 1), is duplicated to
-		 * STDOUT. Fd 0 is then closed, and when the command is executed, its
-		 * output will be written to fd 0 in the parent process.
-		 * The parent will duplicate this output to the input file. Fd 1 is
-		 * then closed, as it won't be necessary anymore. It then continues by
-		 * waiting for the child to finish. */
-		if (pid == CHILD) {
-
-			/* Duplicate the input file to STDIN. On failure, the process is
-			 * terminated. */
-			if (dup2(input, STDIN_FILENO) == -1) {
-				perror("Error duplicating input file to STDIN");
-				return 0;
-			}
-
-			/* The last command in the list does not need to redirect
-			 * output. */
-			if (instr->child != NULL) {
-
-				/* Duplicate fd 1 to STDOUT. On failure, the process is
-				 * terminated. */
-				if (dup2(fd[1], STDOUT_FILENO) == -1) {
-					perror("Error duplicating fd 1 to STDOUT");
-					return 0;
-				}
-
-				/* Close fd 0. On failure, the process is terminated. */
-				if (close(fd[0]) == -1) {
-					perror("Error closing fd 0");
-					return 0;
-				}
-			}
-
-			/* Execute the command. On failure, the process is terminated. */
-			if (execvp(instr->command, instr->arguments) == -1) {
-				perror("Error executing command");
-				return 0;
-			}
-		}
-		else {
-
-			/* The last command closes input, not fd[1]. */
-			if (instr->child == NULL)
-				fd[1] = input;
-
-			/* Close file 1. On failure, the process is terminated. */
-			if (close(fd[1]) == -1) {
-				perror("Error closing file 1");
-				return 0;
-			}
-
-			/* Wait for the child to finish. On failure, the process is
-			 * terminated. */
-			if (wait(NULL) == -1) {
-				printf("Error waiting for child process.\n");
-				return 0;
-			}
-
-			/* Make input file the output from the executed command if the
-			 * the instruction is not the latest. */
-			if (instr->child != NULL)
-				input = fd[0];
+		if (pipe(fd) == -1) {
+			perror("Error creating pipe");
+			return -1;
 		}
 	}
 
-	return 1;
+	pid = fork();
+
+	if (pid == -1) {
+		perror("Error forking process");
+		return -1;
+	}
+
+	if (pid == CHILD) {
+
+		/* The first command takes input from STDIN, so when this command is
+		 * executed, input_fd is set to NULL and no input redirecting is
+		 * necessary. */
+		if (input_fd != -1) {
+
+			if (dup2(input_fd, STDIN_FILENO) == -1) {
+				perror("Error duplicating input to STDIN");
+				return -1;
+			}
+		}
+
+		/* Again, redirecting output is only necessary for instructions before
+		 * the last one. */
+		if (instr->child != NULL) {
+
+			if (dup2(fd[1], STDOUT_FILENO) == -1) {
+				perror("Error duplicating file 1 to STDOUT");
+				return -1;
+			}
+
+			if (close(fd[0]) == -1) {
+				perror("Error closing file 0");
+				return -1;
+			}
+		}
+
+		if (execvp(instr->command, instr->arguments) == -1) {
+			perror("Error executing command");
+			return -1;
+		}
+
+		return 0;
+	}
+	else {
+
+		/* The last command didn't make a pipe, but a file from previous
+		 * commands could still be open, close this. Any other commands just
+		 * close file 1. */
+		if (instr->child == NULL)
+			fd[1] = input_fd;
+
+		/* Only try to close if this is actually set (i.e. single command). */
+		if ((fd[1] != -1) && (close(fd[1]) == -1)) {
+			perror("Error closing file 1 (or input)");
+			return -1;
+		}
+
+		if (wait(NULL) == -1) {
+			printf("Error waiting for child process.\n");
+			return -1;
+		}
+
+		/* If there are any, recursively execute next commands. */
+		if (instr->child != NULL)
+			return execute_commands(instr->child, fd[0]);
+		else
+			return 0;
+	}
 }
 
 /* Parse command uses the user input and create seprate 
@@ -207,10 +185,9 @@ instruction *parse_command(char *command_line) {
 		/* Check whether the command is the first in a serie of pipes to
 		 * create a correct linked list.
 		 */
-		if(child) {
+		if (child) {
 			temp_instruction->child = create_instruction(temp_command, temp_arguments);
 			temp_instruction = temp_instruction->child;
-
 		}
 		else {
 			temp_instruction = create_instruction(temp_command, temp_arguments);
@@ -221,8 +198,7 @@ instruction *parse_command(char *command_line) {
 	return first_instruction;
 }
 
-/* Reads the user's input. Returns a string with the input.
- */
+/* Reads the user's input. Returns a string with the input. */
 char *read_line(char *dir){
 	char buffer[128], *input;
 	int buffer_size, size, i;
@@ -235,10 +211,11 @@ char *read_line(char *dir){
 	input 	= malloc(size);
 
 	/* Remove the newline character read by fgets. */
-	for(i = 0; i < buffer_size; i++) {
-		if(buffer[i] != '\n'){
+	for (i = 0; i < buffer_size; i++) {
+		if (buffer[i] != '\n') {
 			input[i] = buffer[i];
-		}else {
+		}
+		else {
 			input[i] = '\0';
 			break;
 		}
@@ -250,40 +227,39 @@ char *read_line(char *dir){
 int main(int argc, char *argv[]) {
 	instruction *first_instruction;
 	char *user_input;
+	// instruction *root, *instr;
+	// char *args_0[3], *args_1[3], *args_2[3];
+	
 	/* Example instruction chain. */
 
-/*	instruction *root, *instr;
-	char *args_0[3], *args_1[3], *args_2[3];
+	// args_0[0] = "ls";
+	// args_0[1] = "-al";
+	// args_0[2] = NULL;
 
-	args_0[0] = "ls";
-	args_0[1] = "-al";
-	args_0[2] = NULL;
+	// args_1[0] = "grep";
+	// args_1[1] = "bp2";
+	// args_1[2] = NULL;
 
-	args_1[0] = "grep";
-	args_1[1] = "bp";
-	args_1[2] = NULL;
+	// args_2[0] = "grep";
+	// args_2[1] = "c";
+	// args_2[2] = NULL;
 
-	args_2[0] = "grep";
-	args_2[1] = "c";
-	args_2[2] = NULL;
+	// root = create_instruction("/bin/ls", args_0);
+	// instr = (root->child) = create_instruction("/bin/grep", args_1);
+	// instr->child = create_instruction("/bin/grep", args_2);
 
-	root = create_instruction("/bin/ls", args_0);
-	instr = (root->child) = create_instruction("/bin/grep", args_1);
-	instr->child = create_instruction("/bin/grep", args_2);
+	// execute_commands2(root, -1);
 
-	execute_commands(root);
-
-	destroy_instruction(root);*/
-
+	// destroy_instruction(root);
 
 	/* Parse command testing. */
-	while(1) {
-		user_input = read_line("bram@BramLinuxMint ~/Dropbox/Opdrachten/Besturingssystemen/os/opg1");
+	while (1) {
+		user_input = read_line("");
 		printf("[info]executing: %s \n", user_input);
 
 		first_instruction = parse_command(user_input);
 
-		execute_commands(first_instruction);
+		execute_commands(first_instruction, -1);
 		destroy_instruction(first_instruction);
 
 		free(user_input);
