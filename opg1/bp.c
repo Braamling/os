@@ -141,7 +141,7 @@ int execute_commands(instruction *instr, int input_fd) {
  */
 instruction *parse_command(char *command_line) {
 	instruction *temp_instruction, *first_instruction;
-	char *temp_command, **temp_arguments, *args[100], **first_args;
+	char *temp_command, **temp_arguments, *args[100];
 	int i, j, x, child, cmd_len;
 
 	temp_instruction = malloc(sizeof(instruction));
