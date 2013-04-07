@@ -141,11 +141,11 @@ int execute_commands(instruction *instr, int input_fd) {
  */
 instruction *parse_command(char *command_line) {
 	instruction *temp_instruction, *first_instruction;
-	char *temp_command, *temp_arguments[1024], *args[100];
+	char *temp_command, **temp_arguments, *args[100], **first_args;
 	int i, j, x, child, cmd_len;
 
 	temp_instruction = malloc(sizeof(instruction));
-
+	
 	i = 0;
 
 	/* Split up all the command seperated with a pipe character */
@@ -162,7 +162,13 @@ instruction *parse_command(char *command_line) {
 	for (j = 0; j < (i - 1); j ++) {
 		x = 0;
 
+		temp_arguments = malloc(sizeof(char*) * 1024);
+
 		temp_arguments[x] = strtok(args[j]," ");
+
+		if(child){
+			printf("[debug]first arg begin loop: \t %s\n", first_instruction->arguments[0]);
+		}
 
 		/* Put all arguments in an array */
 		while (temp_arguments[x++] != NULL) {
@@ -190,11 +196,17 @@ instruction *parse_command(char *command_line) {
 			temp_instruction = temp_instruction->child;
 		}
 		else {
-			temp_instruction = create_instruction(temp_command, temp_arguments);
-			first_instruction = temp_instruction;
+			temp_instruction 	= create_instruction(temp_command, temp_arguments);
+			first_instruction 	= temp_instruction;
+
 			child = 1;
+			printf("[debug]first arg after copy: \t %s\n", first_instruction->arguments[0]);
+
+
 		}
 	}
+	
+
 	return first_instruction;
 }
 
@@ -258,6 +270,8 @@ int main(int argc, char *argv[]) {
 		printf("[info]executing: %s \n", user_input);
 
 		first_instruction = parse_command(user_input);
+
+		printf("[debug]first instruction:\t%s, %s\n", first_instruction->command, first_instruction->arguments[0]);
 
 		execute_commands(first_instruction, -1);
 		destroy_instruction(first_instruction);
