@@ -237,9 +237,26 @@ char *read_line(char *dir){
 int run_line(char *line) {
 	instruction *instr;
 
-	/* Check if we're terminating. */
-	if (strcmp(line, "exit") == 0)
+	/* Remove all spaces and tabs from the beginning of the line. */
+	while ((line[0] == ' ') || (line[0] == '\t'))
+		line = &line[1];
+
+	// printf("[debug] Line:%s\n", line);
+
+	if (strcmp(line, "") == 0) {
+
+		/* No command given, do nothing. */
+		return 0;
+	}
+	else if (strcmp(line, "exit") == 0) {
+
+		/* Tell the program to stop. */
 		return 1;
+	}
+	else if (strcmp(line, "cd") == 0) {
+		// Do nothing.
+		return 0;
+	}
 	else {
 		instr = parse_command(line);
 
@@ -248,9 +265,10 @@ int run_line(char *line) {
 
 		execute_commands(instr, -1);
 		destroy_instruction(instr);
+		
+		return 0;
 	}
 
-	return 0;
 }
 
 int main(int argc, char *argv[]) {
