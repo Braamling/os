@@ -44,6 +44,7 @@ int destroy_instruction(instruction *instr) {
 
 	destroy_instruction(instr->child);
 
+	free(instr->arguments);
 	free(instr);
 
 	return 1;
@@ -142,67 +143,65 @@ int execute_commands(instruction *instr, int input_fd) {
 instruction *parse_command(char *command_line) {
 	instruction *temp_instruction, *first_instruction;
 	char *temp_command, **temp_arguments, *args[100];
-	int i, j, x, child, cmd_len;
+	int i, j, x, child;
 
-	temp_instruction = malloc(sizeof(instruction));
+	// temp_instruction = malloc(sizeof(instruction));
 	
 	i = 0;
 
 	/* Split up all the command seperated with a pipe character */
-	args[i] = strtok(command_line,"|");
+	args[i] = strtok(command_line, "|");
 
 	while (args[i++] != NULL) {
 		printf("[debug]command:\t %s\n",args[i-1]);
-		args[i] = strtok(NULL,"|");
+		args[i] = strtok(NULL, "|");
 	}
 
-	/* Split up all commands and arguments from each pipe.
-	 */
+	/* Split up all commands and arguments from each pipe. */
 	child = 0;
 	for (j = 0; j < (i - 1); j ++) {
 		x = 0;
 
-		temp_arguments = malloc(sizeof(char*) * 1024);
+		temp_arguments = malloc(sizeof(char *) * 1024);
 
-		temp_arguments[x] = strtok(args[j]," ");
+		temp_arguments[x] = strtok(args[j], " ");
 
-		if(child){
-			printf("[debug]first arg begin loop: \t %s\n", first_instruction->arguments[0]);
-		}
+		if (child)
+			printf("[debug]first arg begin loop: \t %s\n",
+					first_instruction->arguments[0]);
 
 		/* Put all arguments in an array */
-		while (temp_arguments[x++] != NULL) {
-			printf("[debug]arg:\t %s\n", temp_arguments[x-1]);
-			temp_arguments[x] = strtok(NULL," ");
+		while (temp_arguments[x ++] != NULL) {
+			printf("[debug]arg:\t %s\n", temp_arguments[x - 1]);
+			temp_arguments[x] = strtok(NULL, " ");
 		}
 
+		/* Add NULL pointer for exec. */
+		temp_arguments[x] = NULL;
+
 		/* Check whether the command was found. */
-		if(temp_arguments[0] != NULL) {
-			cmd_len = strlen(temp_arguments[0]) + 5;
-			temp_command = malloc(sizeof(char) * cmd_len);
-			strcpy(temp_command, "/bin/");
-			strcat(temp_command, temp_arguments[0]);
-		}
-		else {
+		if (temp_arguments[0] == NULL) {
 			printf("Bad command given\n");
 			return NULL;
 		}
+
+		temp_command = temp_arguments[0];
 		
 		/* Check whether the command is the first in a serie of pipes to
-		 * create a correct linked list.
-		 */
+		 * create a correct linked list. */
 		if (child) {
-			temp_instruction->child = create_instruction(temp_command, temp_arguments);
+			temp_instruction->child = create_instruction(temp_command,
+					temp_arguments);
 			temp_instruction = temp_instruction->child;
 		}
 		else {
-			temp_instruction 	= create_instruction(temp_command, temp_arguments);
-			first_instruction 	= temp_instruction;
+			temp_instruction = create_instruction(temp_command,
+					temp_arguments);
+			first_instruction = temp_instruction;
 
 			child = 1;
-			printf("[debug]first arg after copy: \t %s\n", first_instruction->arguments[0]);
-
-
+			printf("[debug]first arg after copy: \t %s\n",
+					first_instruction->arguments[0]);
 		}
 	}
 	
@@ -239,41 +238,25 @@ char *read_line(char *dir){
 int main(int argc, char *argv[]) {
 	instruction *first_instruction;
 	char *user_input;
-	// instruction *root, *instr;
-	// char *args_0[3], *args_1[3], *args_2[3];
-	
-	/* Example instruction chain. */
+	int running;
 
-	// args_0[0] = "ls";
-	// args_0[1] = "-al";
-	// args_0[2] = NULL;
+	running = 1;
 
-	// args_1[0] = "grep";
-	// args_1[1] = "bp2";
-	// args_1[2] = NULL;
-
-	// args_2[0] = "grep";
-	// args_2[1] = "c";
-	// args_2[2] = NULL;
-
-	// root = create_instruction("/bin/ls", args_0);
-	// instr = (root->child) = create_instruction("/bin/grep", args_1);
-	// instr->child = create_instruction("/bin/grep", args_2);
-
-	// execute_commands2(root, -1);
-
-	// destroy_instruction(root);
-
-	/* Parse command testing. */
-	while (1) {
+	while (running) {
 		user_input = read_line("");
 		printf("[info]executing: %s \n", user_input);
 
 		first_instruction = parse_command(user_input);
 
-		printf("[debug]first instruction:\t%s, %s\n", first_instruction->command, first_instruction->arguments[0]);
+		printf("[debug]first instruction:\t%s, %s\n",
+				first_instruction->command, first_instruction->arguments[0]);
 
-		execute_commands(first_instruction, -1);
+		/* Check if we're terminating. */
+		if (strcmp(first_instruction->command, "exit") == 0)
+			running = 0;
+		else
+			execute_commands(first_instruction, -1);
+		
 		destroy_instruction(first_instruction);
 
 		free(user_input);
