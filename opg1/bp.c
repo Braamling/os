@@ -230,10 +230,32 @@ char *read_line(char *dir){
 	return input;
 }
 
+/* Runs a line of commands.
+ *
+ * Returns 0 on success, -1 if something went wrong, and 1 when exit has been
+ * called. */
+int run_line(char *line) {
+	instruction *instr;
+
+	/* Check if we're terminating. */
+	if (strcmp(line, "exit") == 0)
+		return 1;
+	else {
+		instr = parse_command(line);
+
+		// printf("[debug]first instruction:\t%s, %s\n",
+		//	instr->command[0], instr->command);
+
+		execute_commands(instr, -1);
+		destroy_instruction(instr);
+	}
+
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
-	instruction *first_instruction;
 	char *user_input;
-	int running;
+	int running, run_result;
 
 	running = 1;
 
@@ -241,20 +263,14 @@ int main(int argc, char *argv[]) {
 		user_input = read_line("");
 
 		// printf("[info]executing: %s \n", user_input);
-
-		/* Check if we're terminating. */
-		if (strcmp(user_input, "exit") == 0)
-			running = 0;
-		else {
-			first_instruction = parse_command(user_input);
-
-			// printf("[debug]first instruction:\t%s, %s\n",
-			// 		first_instruction->command[0], first_instruction->command);
-
-			execute_commands(first_instruction, -1);
-			destroy_instruction(first_instruction);
-		}
 		
+		run_result = run_line(user_input);
+		if (run_result == -1) {
+			printf("Error running commands.\n");
+			return -1;
+		}
+		else if (run_result == 1)
+			running = 0;
 
 		free(user_input);
 	}
