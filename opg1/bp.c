@@ -239,20 +239,22 @@ int main(int argc, char *argv[]) {
 
 	while (running) {
 		user_input = read_line("");
+
 		// printf("[info]executing: %s \n", user_input);
 
-		first_instruction = parse_command(user_input);
-
-		// printf("[debug]first instruction:\t%s, %s\n",
-		// 		first_instruction->command[0], first_instruction->command);
-
 		/* Check if we're terminating. */
-		if (strcmp(first_instruction->command[0], "exit") == 0)
+		if (strcmp(user_input, "exit") == 0)
 			running = 0;
-		else
+		else {
+			first_instruction = parse_command(user_input);
+
+			// printf("[debug]first instruction:\t%s, %s\n",
+			// 		first_instruction->command[0], first_instruction->command);
+
 			execute_commands(first_instruction, -1);
+			destroy_instruction(first_instruction);
+		}
 		
-		destroy_instruction(first_instruction);
 
 		free(user_input);
 	}
