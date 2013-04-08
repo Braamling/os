@@ -2,12 +2,11 @@
 #define MAX_INSTRUCTIONS 10
 
 typedef struct instruction_struct {
-	char *command;
-	char **arguments;
+	char **command;
 	struct instruction_struct *child;
 } instruction;
 
-instruction *create_instruction(char *, char **);
+instruction *create_instruction(char **);
 int destroy_instruction(instruction *);
 
 int execute_commands(instruction *, int);
