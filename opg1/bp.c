@@ -240,7 +240,11 @@ int run_line(char *line) {
 	/* Check if we're terminating. */
 	if (strcmp(line, "exit") == 0)
 		return 1;
-	else {
+	else if(line[0] == '.')
+		printf("execute file\n");
+	else if(strchr(line, '/') != NULL)
+		return -1;
+	else{
 		instr = parse_command(line);
 
 		// printf("[debug]first instruction:\t%s, %s\n",
@@ -267,7 +271,6 @@ int main(int argc, char *argv[]) {
 		run_result = run_line(user_input);
 		if (run_result == -1) {
 			printf("Error running commands.\n");
-			return -1;
 		}
 		else if (run_result == 1)
 			running = 0;
