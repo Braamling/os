@@ -100,6 +100,7 @@ int execute_commands(instruction *instr, int input_fd) {
 
 		if (execvp(instr->command[0], instr->command) == -1) {
 			perror("Error executing command");
+			exit(0);
 			return -1;
 		}
 
