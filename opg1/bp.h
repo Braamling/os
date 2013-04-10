@@ -14,3 +14,7 @@ int execute_commands(instruction *, int);
 
 instruction *parse_command(char *);
 char *read_line();
+
+int run_line(char *);
+
+char *trim_start(char *);

@@ -239,6 +239,7 @@ int cd(char *cmd) {
 	char *path;
 
 	path = &cmd[3];
+	path = trim_start(path);
 
 	if (chdir(path) == -1) {
 		perror("Error changing directory");
@@ -246,6 +247,14 @@ int cd(char *cmd) {
 	}
 
 	return 0;
+}
+
+/* Remove all spaces and tabs from the beginning of the string. */
+char *trim_start(char *string) {
+	while (isblank(string[0]))
+		string = &string[1];
+
+	return string;
 }
 
 /* Runs a line of commands.
@@ -259,9 +268,7 @@ int run_line(char *line) {
 
 	possible_cd = NULL;
 
-	/* Remove all spaces and tabs from the beginning of the line. */
-	while ((line[0] == ' ') || (line[0] == '\t'))
-		line = &line[1];
+	line = trim_start(line);
 
 	// printf("[debug] Line:%s\n", line);
 
