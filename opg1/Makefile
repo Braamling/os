@@ -7,6 +7,9 @@ CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb -lreadline -D_GNU_SOURCE
 bp: bp.c
 	$(CC) $^ $(CFLAGS) -o $@
 
+read_file: read_file.c
+	$(CC) $^ $(CFLAGS) -o $@
+
 all: bp
 
 clean:
