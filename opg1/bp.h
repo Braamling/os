@@ -18,3 +18,5 @@ char *read_line();
 int run_line(char *);
 
 char *trim_start(char *);
+
+void make_user_friendly(char *cwd);

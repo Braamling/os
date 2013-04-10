@@ -12,6 +12,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 
 #include "bp.h"
 
@@ -167,6 +170,9 @@ instruction *parse_command(char *command_line) {
 		temp_arguments = malloc(sizeof(char *) * 1024);
 
 		temp_arguments[x] = strtok(args[j], " ");
+		if(temp_arguments[0] == NULL){
+			return NULL;
+		}
 
 		// if (child)
 		// 	printf("[debug]first arg begin loop: \t %s\n",
@@ -304,8 +310,7 @@ int run_line(char *line) {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
-		printf("[warning] Cannot execute binairy outside PATH.");
-
+		printf("[warning] Cannot execute binairy outside PATH.\n");
 		return -1;
 	}
 	else {
@@ -313,6 +318,10 @@ int run_line(char *line) {
 		/* Just parse the line and execute it. */
 
 		instr = parse_command(line);
+
+		if(instr == NULL){
+			return -1;
+		}
 
 		// printf("[debug]first instruction:\t%s, %s\n",
 		//	instr->command[0], instr->command);
@@ -324,6 +333,17 @@ int run_line(char *line) {
 	}
 }
 
+void make_user_friendly(char *cwd){
+	char *line_end;
+	int cwd_len;
+
+	cwd_len = strlen(cwd) + 3;
+	line_end = malloc(sizeof(char) * cwd_len);
+	strcpy(line_end, " $ ");
+	strcat(cwd, line_end);
+	free(line_end);
+}
+
 int main(int argc, char *argv[]) {
 	char *cwd, *user_input;
 	int running, run_result;
@@ -332,9 +352,12 @@ int main(int argc, char *argv[]) {
 
 	while (running) {
 		cwd = get_current_dir_name();
+		make_user_friendly(cwd);
+		user_input = readline(cwd);
 
-		user_input = read_line(cwd);
 
+		add_history (user_input);
+		//show_history();
 		// printf("[info]executing: %s \n", user_input);
 		
 		run_result = run_line(user_input);
