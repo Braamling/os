@@ -402,7 +402,7 @@ void make_user_friendly(char *cwd) {
 }
 
 void sigint_handler(int sig_no){
-	printf("Closing program/n.");
+	printf("Nothing to close\n.");
 }
 
 int main(int argc, char *argv[]) {
@@ -426,8 +426,6 @@ int main(int argc, char *argv[]) {
 		user_input = readline(cwd);
 
 		add_history (user_input);
-		//show_history();
-		// printf("[info]executing: %s \n", user_input);
 		
 		run_result = run_line(user_input, ALLOW_CD);
 
