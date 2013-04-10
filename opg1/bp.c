@@ -18,6 +18,8 @@
 
 #include "bp.h"
 
+struct sigaction old_action;
+
 /* Construct an instruction.
  *
  * Returns NULL on failure, a pointer to the newly created instruction on
@@ -55,6 +57,9 @@ int destroy_instruction(instruction *instr) {
 int execute_commands(instruction *instr, int input_fd) {
 	int fd[2];
 	pid_t pid;
+
+	/* Reactivate the ^C termination sigaction sigint. */
+	sigaction(SIGINT, &old_action, NULL);
 
 	/* The last command in the list outputs to STDOUT, so redirecting output is
 	 * only necessary for instructions before the last one. */
@@ -344,17 +349,29 @@ void make_user_friendly(char *cwd){
 	free(line_end);
 }
 
+void sigint_handler(int sig_no){
+	printf("Closing program/n.");
+}
+
 int main(int argc, char *argv[]) {
 	char *cwd, *user_input;
 	int running, run_result;
 
 	running = 1;
 
+	/* Create a new sigaction for ^C interups */
+	struct sigaction action;
+	memset(&action, 0, sizeof(action));
+	action.sa_handler = &sigint_handler;
+
+	/* Redirect sigaction to escape ^C interups */
+	sigaction(SIGINT, &action, &old_action);
+
+
 	while (running) {
 		cwd = get_current_dir_name();
 		make_user_friendly(cwd);
 		user_input = readline(cwd);
-
 
 		add_history (user_input);
 		//show_history();
@@ -369,6 +386,9 @@ int main(int argc, char *argv[]) {
 
 		free(cwd);
 		free(user_input);
+
+		/* Redirect sigaction to escape ^C interups */
+		sigaction(SIGINT, &action, &old_action);
 	}
 
 	return 0;
