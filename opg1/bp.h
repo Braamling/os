@@ -14,3 +14,5 @@ int execute_commands(instruction *, int);
 
 instruction *parse_command(char *);
 char *read_line();
+
+void make_user_friendly(char *cwd);

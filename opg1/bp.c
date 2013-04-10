@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <readline/readline.h>
 #include <readline/history.h>
 
 
@@ -325,6 +326,17 @@ int run_line(char *line) {
 	}
 }
 
+void make_user_friendly(char *cwd){
+	char *line_end;
+	int cwd_len;
+
+	cwd_len = strlen(cwd) + 3;
+	line_end = malloc(sizeof(char) * cwd_len);
+	strcpy(line_end, " $ ");
+	strcat(cwd, line_end);
+	free(line_end);
+}
+
 int main(int argc, char *argv[]) {
 	char *cwd, *user_input;
 	int running, run_result;
@@ -332,12 +344,13 @@ int main(int argc, char *argv[]) {
 	running = 1;
 
 	while (running) {
-/*		user_input = read_line("");
-		add_history (user_input);
-		show_history();*/
-
 		cwd = get_current_dir_name();
-		user_input = read_line(cwd);
+		make_user_friendly(cwd);
+		user_input = readline(cwd);
+
+
+		add_history (user_input);
+		//show_history();
 		// printf("[info]executing: %s \n", user_input);
 		
 		run_result = run_line(user_input);
