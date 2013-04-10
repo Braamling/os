@@ -12,6 +12,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <readline/history.h>
+
 
 #include "bp.h"
 
@@ -165,6 +167,9 @@ instruction *parse_command(char *command_line) {
 		temp_arguments = malloc(sizeof(char *) * 1024);
 
 		temp_arguments[x] = strtok(args[j], " ");
+		if(temp_arguments[0] == NULL){
+			return NULL;
+		}
 
 		// if (child)
 		// 	printf("[debug]first arg begin loop: \t %s\n",
@@ -261,7 +266,7 @@ int run_line(char *line) {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
-		printf("[warning] Cannot execute binairy outside PATH.");
+		printf("[warning] Cannot execute binairy outside PATH.\n");
 		return -1;
 	}
 	else if (strcmp(line, "cd") == 0) {
@@ -271,6 +276,10 @@ int run_line(char *line) {
 	else {
 		instr = parse_command(line);
 
+		if(instr == NULL){
+			return -1;
+		}
+
 		// printf("[debug]first instruction:\t%s, %s\n",
 		//	instr->command[0], instr->command);
 
@@ -279,7 +288,7 @@ int run_line(char *line) {
 		
 		return 0;
 	}
-	
+
 	return 0;
 }
 
@@ -291,7 +300,8 @@ int main(int argc, char *argv[]) {
 
 	while (running) {
 		user_input = read_line("");
-
+		add_history (user_input);
+		show_history();
 		// printf("[info]executing: %s \n", user_input);
 		
 		run_result = run_line(user_input);
