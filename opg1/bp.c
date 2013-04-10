@@ -10,8 +10,10 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -263,11 +265,54 @@ char *trim_start(char *string) {
 	return string;
 }
 
+/* Execute a file line by line. */
+int execute_file(char *path) {
+	FILE *fp;
+	ssize_t read;
+	size_t len;
+	char *line;
+	int run_result;
+
+	run_result = 0;
+
+	fp = fopen(path, "r");
+	if (fp == NULL)
+		return -1;
+
+	len = 0;
+	line = NULL;
+
+	while ((read = getline(&line, &len, fp)) != -1) {
+
+		/* Remove the newline char from the line. */
+		if (line[read - 1] == '\n')
+			line[read - 1] = '\0';
+
+		run_result = run_line(line, DISALLOW_CD);
+
+		/* If the file called 'exit', stop executing the file, but don't stop
+		 * the shell. */
+		if (run_result == TERMINATE) {
+			run_result = 0;
+			break;
+		}
+		else if (run_result == -1) {
+
+			/* An instruction failed, break off execution. */
+			break;
+		}
+	}
+
+	free(line);
+
+	return run_result;
+}
+
 /* Runs a line of commands.
  *
  * Returns 0 on success, -1 if something went wrong, and 1 when exit has been
  * called. */
-int run_line(char *line) {
+int run_line(char *line, int may_cd) {
 	instruction *instr;
 	char *possible_cd;
 	int do_cd;
@@ -278,8 +323,8 @@ int run_line(char *line) {
 
 	// printf("[debug] Line:%s\n", line);
 
-	/* Extract the first three characters from the line, so we can check if a
-	 * 'cd ' command was given. */
+	/* Extract the first three characters from the line, so we can check if
+	 * a 'cd ' command was given. */
 	possible_cd = malloc(4);
 	memcpy(possible_cd, line, 3);
 	possible_cd[3] = '\0';
@@ -298,11 +343,18 @@ int run_line(char *line) {
 	}
 	else if (line[0] == '.') {
 
-		printf("execute file\n");
-		return 0;
+		/* Run commands from a file. */
+		return execute_file(line);
 	}
 	else if (do_cd) {
 
+		/* Check if changing dir is allowed. */
+		if (may_cd == DISALLOW_CD) {
+
+			/* Just do nothing. */
+			return 0;
+		}
+		
 		/* Change directory to the given path. */
 		return cd(line);
 	}
@@ -319,7 +371,7 @@ int run_line(char *line) {
 
 		instr = parse_command(line);
 
-		if(instr == NULL){
+		if (instr == NULL) {
 			return -1;
 		}
 
@@ -333,11 +385,11 @@ int run_line(char *line) {
 	}
 }
 
-void make_user_friendly(char *cwd){
+void make_user_friendly(char *cwd) {
 	char *line_end;
 	int cwd_len;
 
-	cwd_len = strlen(cwd) + 3;
+	cwd_len = strlen(cwd) + 4;
 	line_end = malloc(sizeof(char) * cwd_len);
 	strcpy(line_end, " $ ");
 	strcat(cwd, line_end);
@@ -360,7 +412,8 @@ int main(int argc, char *argv[]) {
 		//show_history();
 		// printf("[info]executing: %s \n", user_input);
 		
-		run_result = run_line(user_input);
+		run_result = run_line(user_input, ALLOW_CD);
+
 		if (run_result == -1) {
 			printf("Error running commands.\n");
 		}
