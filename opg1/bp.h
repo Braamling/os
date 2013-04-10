@@ -1,5 +1,6 @@
 #define CHILD 0
 #define MAX_INSTRUCTIONS 10
+#define TERMINATE 1
 
 typedef struct instruction_struct {
 	char **command;

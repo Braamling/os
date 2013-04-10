@@ -99,6 +99,8 @@ int execute_commands(instruction *instr, int input_fd) {
 		}
 
 		if (execvp(instr->command[0], instr->command) == -1) {
+
+			/* The command failed to execute. Terminate the child. */
 			perror("Error executing command");
 			exit(0);
 			return -1;
@@ -209,7 +211,8 @@ instruction *parse_command(char *command_line) {
 char *read_line(char *dir){
 	char buffer[128], *input;
 	int buffer_size, size, i;
-	printf("%s$ ",dir);
+
+	printf("%s $ ",dir);
 	fgets(buffer, sizeof(buffer), stdin);
 
 	buffer_size = strlen(buffer);
@@ -231,18 +234,44 @@ char *read_line(char *dir){
 	return input;
 }
 
+/* Change directory. Input is the command, including 'cd'. */
+int cd(char *cmd) {
+	char *path;
+
+	path = &cmd[3];
+
+	if (chdir(path) == -1) {
+		perror("Error changing directory");
+		return -1;
+	}
+
+	return 0;
+}
+
 /* Runs a line of commands.
  *
  * Returns 0 on success, -1 if something went wrong, and 1 when exit has been
  * called. */
 int run_line(char *line) {
 	instruction *instr;
+	char *possible_cd;
+	int do_cd;
+
+	possible_cd = NULL;
 
 	/* Remove all spaces and tabs from the beginning of the line. */
 	while ((line[0] == ' ') || (line[0] == '\t'))
 		line = &line[1];
 
 	// printf("[debug] Line:%s\n", line);
+
+	/* Extract the first three characters from the line, so we can check if a
+	 * 'cd ' command was given. */
+	possible_cd = malloc(4);
+	memcpy(possible_cd, line, 3);
+	possible_cd[3] = '\0';
+	do_cd = strcmp(possible_cd, "cd ") == 0;
+	free(possible_cd);
 
 	if (strcmp(line, "") == 0) {
 
@@ -252,23 +281,30 @@ int run_line(char *line) {
 	else if (strcmp(line, "exit") == 0) {
 
 		/* Tell the program to stop. */
-		return 1;
-
+		return TERMINATE;
 	}
-	else if (line[0] == '.')
+	else if (line[0] == '.') {
+
 		printf("execute file\n");
+		return 0;
+	}
+	else if (do_cd) {
+
+		/* Change directory to the given path. */
+		return cd(line);
+	}
 	else if (strchr(line, '/') != NULL) {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
 		printf("[warning] Cannot execute binairy outside PATH.");
+
 		return -1;
 	}
-	else if (strcmp(line, "cd") == 0) {
-		// Do nothing.
-		return 0;
-	}
 	else {
+
+		/* Just parse the line and execute it. */
+
 		instr = parse_command(line);
 
 		// printf("[debug]first instruction:\t%s, %s\n",
@@ -279,18 +315,18 @@ int run_line(char *line) {
 		
 		return 0;
 	}
-	
-	return 0;
 }
 
 int main(int argc, char *argv[]) {
-	char *user_input;
+	char *cwd, *user_input;
 	int running, run_result;
 
 	running = 1;
 
 	while (running) {
-		user_input = read_line("");
+		cwd = get_current_dir_name();
+
+		user_input = read_line(cwd);
 
 		// printf("[info]executing: %s \n", user_input);
 		
@@ -298,9 +334,10 @@ int main(int argc, char *argv[]) {
 		if (run_result == -1) {
 			printf("Error running commands.\n");
 		}
-		else if (run_result == 1)
+		else if (run_result == TERMINATE)
 			running = 0;
 
+		free(cwd);
 		free(user_input);
 	}
 
