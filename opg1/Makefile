@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb -D_GNU_SOURCE
+CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb -lreadline -D_GNU_SOURCE
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -c -o $@
