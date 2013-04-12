@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -20,6 +21,8 @@
 #include "bp.h"
 
 struct sigaction old_action;
+struct sigaction prompt_action;
+struct sigaction piping_action;
 
 /* Construct an instruction.
  *
@@ -56,11 +59,10 @@ int destroy_instruction(instruction *instr) {
 }
 
 int execute_commands(instruction *instr, int input_fd) {
-	int fd[2];
-	pid_t pid;
+	int fd[2], status;
+	pid_t pid, wait_pid;
 
-	/* Reactivate the ^C termination sigaction sigint. */
-	sigaction(SIGINT, &old_action, NULL);
+	sigaction(SIGINT, &piping_action, &old_action);
 
 	/* The last command in the list outputs to STDOUT, so redirecting output is
 	 * only necessary for instructions before the last one. */
@@ -80,6 +82,9 @@ int execute_commands(instruction *instr, int input_fd) {
 	}
 
 	if (pid == CHILD) {
+
+		/* Reactivate the ^C termination sigaction sigint. */
+		sigaction(SIGINT, &old_action, NULL);
 
 		/* The first command takes input from STDIN, so when this command is
 		 * executed, input_fd is set to NULL and no input redirecting is
@@ -131,8 +136,14 @@ int execute_commands(instruction *instr, int input_fd) {
 			return -1;
 		}
 
-		if (wait(NULL) == -1) {
-			printf("Error waiting for child process.\n");
+		do {
+			wait_pid = wait(&status);
+		} while ((wait_pid == -1) && (errno == EINTR));
+
+		sigaction(SIGINT, &prompt_action, &old_action);
+
+		if (wait_pid == -1) {
+			perror("Error waiting for child process");
 			return -1;
 		}
 
@@ -414,8 +425,18 @@ char *build_prompt() {
 	return prompt;
 }
 
-void sigint_handler(int sig_no) {
-	printf("Nothing to close.\n");
+void prompt_sigint_handler(int sig_no) {
+	char *prompt;
+
+	prompt = build_prompt();
+
+	printf("\n%s", prompt);
+
+	free(prompt);
+}
+
+void piping_sigint_handler(int sig_no) {
+	printf("\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -424,13 +445,17 @@ int main(int argc, char *argv[]) {
 
 	running = 1;
 
-	/* Create a new sigaction for ^C interups */
-	struct sigaction action;
-	memset(&action, 0, sizeof(action));
-	action.sa_handler = &sigint_handler;
+	/* Create a new sigaction for ^C interups. */
+	memset(&prompt_action, 0, sizeof(prompt_action));
+	prompt_action.sa_handler = &prompt_sigint_handler;
 
-	/* Redirect sigaction to escape ^C interups */
-	sigaction(SIGINT, &action, &old_action);
+	/* Prepare a sigaction for when a piping string of commands is interrupted
+	 * by the keyboard (^C). */
+	memset(&piping_action, 0, sizeof(piping_action));
+	piping_action.sa_handler = &piping_sigint_handler;
+
+	/* Redirect sigaction to escape keyboard interups. */
+	sigaction(SIGINT, &prompt_action, &old_action);
 
 	while (running) {
 
@@ -452,7 +477,7 @@ int main(int argc, char *argv[]) {
 		free(user_input);
 
 		/* Redirect sigaction to escape ^C interups */
-		sigaction(SIGINT, &action, &old_action);
+		sigaction(SIGINT, &prompt_action, &old_action);
 	}
 
 	return 0;

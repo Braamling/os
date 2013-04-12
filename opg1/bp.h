@@ -18,3 +18,5 @@ int run_line(char *, int);
 int execute_file(char *);
 char *trim_start(char *);
 char *build_prompt();
+void prompt_sigint_handler(int);
+void piping_sigint_handler(int);
