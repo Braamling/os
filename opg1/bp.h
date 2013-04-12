@@ -11,16 +11,10 @@ typedef struct instruction_struct {
 
 instruction *create_instruction(char **);
 int destroy_instruction(instruction *);
-
 int execute_commands(instruction *, int);
-
 instruction *parse_command(char *);
 char *read_line();
-
 int run_line(char *, int);
-
 int execute_file(char *);
-
 char *trim_start(char *);
-
-void make_user_friendly(char *cwd);
+char *build_prompt();

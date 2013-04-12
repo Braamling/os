@@ -17,7 +17,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-
 #include "bp.h"
 
 struct sigaction old_action;
@@ -271,12 +270,17 @@ char *trim_start(char *string) {
 }
 
 /* Execute a file line by line. */
-int execute_file(char *path) {
+int execute_file(char *command) {
 	FILE *fp;
 	ssize_t read;
 	size_t len;
-	char *line;
+	char *path, *line;
 	int run_result;
+
+	/* As executing a file is done by giving the command '. <filename>',
+	 * extract the filename, by creating a pointer to that start of the
+	 * filename in the command string. */
+	path = &command[2];
 
 	run_result = 0;
 
@@ -322,6 +326,12 @@ int run_line(char *line, int may_cd) {
 	char *possible_cd;
 	int do_cd;
 
+	if (line == NULL) {
+		/* End of file, terminate. */
+		printf("\n");
+		return TERMINATE;
+	}
+
 	possible_cd = NULL;
 
 	line = trim_start(line);
@@ -363,7 +373,7 @@ int run_line(char *line, int may_cd) {
 		/* Change directory to the given path. */
 		return cd(line);
 	}
-	else if (strchr(line, '/') != NULL) {
+	else if (line[0] == '/') {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
@@ -390,23 +400,26 @@ int run_line(char *line, int may_cd) {
 	}
 }
 
-void make_user_friendly(char *cwd) {
-	char *line_end;
-	int cwd_len;
+char *build_prompt() {
+	char *cwd, *prompt;
 
-	cwd_len = strlen(cwd) + 4;
-	line_end = malloc(sizeof(char) * cwd_len);
-	strcpy(line_end, " $ ");
-	strcat(cwd, line_end);
-	free(line_end);
+	cwd = get_current_dir_name();
+
+	prompt = malloc(strlen(cwd) + 4);
+	prompt = strcpy(prompt, cwd);
+	prompt = strcat(prompt, " $ ");
+
+	free(cwd);
+
+	return prompt;
 }
 
-void sigint_handler(int sig_no){
-	printf("Nothing to close\n.");
+void sigint_handler(int sig_no) {
+	printf("Nothing to close.\n");
 }
 
 int main(int argc, char *argv[]) {
-	char *cwd, *user_input;
+	char *prompt, *user_input;
 	int running, run_result;
 
 	running = 1;
@@ -419,13 +432,13 @@ int main(int argc, char *argv[]) {
 	/* Redirect sigaction to escape ^C interups */
 	sigaction(SIGINT, &action, &old_action);
 
-
 	while (running) {
-		cwd = get_current_dir_name();
-		make_user_friendly(cwd);
-		user_input = readline(cwd);
 
-		add_history (user_input);
+		prompt = build_prompt();
+
+		user_input = readline(prompt);
+
+		add_history(user_input);
 		
 		run_result = run_line(user_input, ALLOW_CD);
 
@@ -435,7 +448,7 @@ int main(int argc, char *argv[]) {
 		else if (run_result == TERMINATE)
 			running = 0;
 
-		free(cwd);
+		free(prompt);
 		free(user_input);
 
 		/* Redirect sigaction to escape ^C interups */
