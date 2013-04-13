@@ -62,9 +62,6 @@ int execute_commands(instruction *instr, int input_fd) {
 	int fd[2], status;
 	pid_t pid, wait_pid;
 
-	/* Reactivate the ^C termination sigaction sigint. */
-	//sigaction(SIGINT, &piping_action, &old_action);
-
 	/* The last command in the list outputs to STDOUT, so redirecting output is
 	 * only necessary for instructions before the last one. */
 	if (instr->child != NULL) {
@@ -82,10 +79,12 @@ int execute_commands(instruction *instr, int input_fd) {
 		return -1;
 	}
 
-	/* ranzig */
+	/* Hier moet je toch echt even een beter stukje commentaar zetten dan
+	 * 'ranzig'. */
 	child_process = 1;
 
 	if (pid == CHILD) {
+
 		/* Reactivate the ^C termination sigaction sigint. */
 		sigaction(SIGINT, &old_action, NULL);
 
@@ -143,7 +142,6 @@ int execute_commands(instruction *instr, int input_fd) {
 			wait_pid = wait(&status);
 		} while ((wait_pid == -1) && (errno == EINTR));
 
-
 		if (wait_pid == -1) {
 			perror("Error waiting for child process");
 			return -1;
@@ -162,24 +160,19 @@ int execute_commands(instruction *instr, int input_fd) {
  * The user input as an char pointer has to be given as an argument.
  * The function will return the first instruction of a linked list with
  * instruction structs. 
- * When a bad command format is found a NULL will be returned.
- */
+ * When a bad command format is found a NULL will be returned. */
 instruction *parse_command(char *command_line) {
 	instruction *temp_instruction, *first_instruction;
 	char **temp_arguments, *args[100];
 	int i, j, x, child;
 
-	// temp_instruction = malloc(sizeof(instruction));
-	
 	i = 0;
 
 	/* Split up all the command seperated with a pipe character */
 	args[i] = strtok(command_line, "|");
 
-	while (args[i++] != NULL) {
-		// printf("[debug]command:\t %s\n",args[i-1]);
+	while (args[i++] != NULL)
 		args[i] = strtok(NULL, "|");
-	}
 
 	/* Split up all commands and arguments from each pipe. */
 	child = 0;
@@ -193,15 +186,9 @@ instruction *parse_command(char *command_line) {
 			return NULL;
 		}
 
-		// if (child)
-		// 	printf("[debug]first arg begin loop: \t %s\n",
-		// 			first_instruction->command[0]);
-
 		/* Put all arguments in an array */
-		while (temp_arguments[x ++] != NULL) {
-			// printf("[debug]arg:\t %s\n", temp_arguments[x - 1]);
+		while (temp_arguments[x ++] != NULL)
 			temp_arguments[x] = strtok(NULL, " ");
-		}
 
 		/* Add NULL pointer for exec. */
 		temp_arguments[x] = NULL;
@@ -223,8 +210,6 @@ instruction *parse_command(char *command_line) {
 			first_instruction = temp_instruction;
 
 			child = 1;
-			// printf("[debug]first arg after copy: \t %s\n",
-			// 		first_instruction->command[0]);
 		}
 	}
 	
@@ -340,6 +325,7 @@ int run_line(char *line, int may_cd) {
 	int do_cd;
 
 	if (line == NULL) {
+
 		/* End of file, terminate. */
 		printf("\n");
 		return TERMINATE;
@@ -348,8 +334,6 @@ int run_line(char *line, int may_cd) {
 	possible_cd = NULL;
 
 	line = trim_start(line);
-
-	// printf("[debug] Line:%s\n", line);
 
 	/* Extract the first three characters from the line, so we can check if
 	 * a 'cd ' command was given. */
@@ -403,9 +387,6 @@ int run_line(char *line, int may_cd) {
 			return -1;
 		}
 
-		// printf("[debug]first instruction:\t%s, %s\n",
-		//	instr->command[0], instr->command);
-
 		execute_commands(instr, -1);
 		destroy_instruction(instr);
 		
@@ -427,23 +408,16 @@ char *build_prompt() {
 	return prompt;
 }
 
-/*void prompt_sigint_handler(int sig_no) {
+void sigint_handler(int sig_no){
 	char *prompt;
 
-	prompt = build_prompt();
+	printf("\n");
 
-	printf("\n%s", prompt);
-
-	free(prompt);
-}*/
-
-void sigint_handler(int sig_no){
-	if(!child_process){
-		char *prompt;
+	if (!child_process) {
 
 		prompt = build_prompt();
 
-		printf("\n%s", prompt);
+		printf("%s", prompt);
 
 		free(prompt);		
 	}
@@ -455,16 +429,7 @@ int main(int argc, char *argv[]) {
 
 	running = 1;
 
-	/* Create a new sigaction for ^C interups. */
-/*	memset(&prompt_action, 0, sizeof(prompt_action));
-	prompt_action.sa_handler = &prompt_sigint_handler;*/
-
-	/* Prepare a sigaction for when a piping string of commands is interrupted
-	 * by the keyboard (^C). */
-/*	memset(&piping_action, 0, sizeof(piping_action));
-	piping_action.sa_handler = &piping_sigint_handler;*/
-
- /* Create a new sigaction for ^C interups */
+	/* Create a new sigaction for ^C interups */
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
 	action.sa_handler = &sigint_handler;
@@ -491,10 +456,6 @@ int main(int argc, char *argv[]) {
 
 		free(prompt);
 		free(user_input);
-
-		/* Redirect sigaction to escape ^C interups */
-		//sigaction(SIGINT, &action, &old_action);
-
 	}
 
 	return 0;
