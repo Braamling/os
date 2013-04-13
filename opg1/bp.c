@@ -438,7 +438,13 @@ char *build_prompt() {
 }*/
 
 void sigint_handler(int sig_no){
-	printf("\n");
+	char *prompt;
+
+	prompt = build_prompt();
+
+	printf("\n%s", prompt);
+
+	free(prompt);
 }
 
 int main(int argc, char *argv[]) {
