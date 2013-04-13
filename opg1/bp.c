@@ -21,6 +21,7 @@
 #include "bp.h"
 
 struct sigaction old_action;
+int child_process;
 
 /* Construct an instruction.
  *
@@ -61,7 +62,6 @@ int execute_commands(instruction *instr, int input_fd) {
 	pid_t pid;
 
 	/* Reactivate the ^C termination sigaction sigint. */
-	sigaction(SIGINT, &old_action, NULL);
 
 	/* The last command in the list outputs to STDOUT, so redirecting output is
 	 * only necessary for instructions before the last one. */
@@ -80,7 +80,11 @@ int execute_commands(instruction *instr, int input_fd) {
 		return -1;
 	}
 
+	/* ranzig */
+	child_process = 1;
+
 	if (pid == CHILD) {
+		sigaction(SIGINT, &old_action, NULL);
 
 		/* The first command takes input from STDIN, so when this command is
 		 * executed, input_fd is set to NULL and no input redirecting is
@@ -402,7 +406,9 @@ void make_user_friendly(char *cwd) {
 }
 
 void sigint_handler(int sig_no){
-	printf("Nothing to close\n.");
+	if(!child_process){
+		printf("Nothing to close\n.");
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -428,6 +434,7 @@ int main(int argc, char *argv[]) {
 		add_history (user_input);
 		
 		run_result = run_line(user_input, ALLOW_CD);
+		child_process = 0;
 
 		if (run_result == -1) {
 			printf("Error running commands.\n");
@@ -439,7 +446,7 @@ int main(int argc, char *argv[]) {
 		free(user_input);
 
 		/* Redirect sigaction to escape ^C interups */
-		sigaction(SIGINT, &action, &old_action);
+		//sigaction(SIGINT, &action, &old_action);
 	}
 
 	return 0;
