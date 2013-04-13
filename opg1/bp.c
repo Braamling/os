@@ -11,17 +11,18 @@
 #include <ctype.h>
 #include <string.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
-
 #include "bp.h"
 
 struct sigaction old_action;
 int child_process;
+
 
 /* Construct an instruction.
  *
@@ -58,10 +59,11 @@ int destroy_instruction(instruction *instr) {
 }
 
 int execute_commands(instruction *instr, int input_fd) {
-	int fd[2];
-	pid_t pid;
+	int fd[2], status;
+	pid_t pid, wait_pid;
 
 	/* Reactivate the ^C termination sigaction sigint. */
+	//sigaction(SIGINT, &piping_action, &old_action);
 
 	/* The last command in the list outputs to STDOUT, so redirecting output is
 	 * only necessary for instructions before the last one. */
@@ -84,6 +86,7 @@ int execute_commands(instruction *instr, int input_fd) {
 	child_process = 1;
 
 	if (pid == CHILD) {
+		/* Reactivate the ^C termination sigaction sigint. */
 		sigaction(SIGINT, &old_action, NULL);
 
 		/* The first command takes input from STDIN, so when this command is
@@ -136,8 +139,13 @@ int execute_commands(instruction *instr, int input_fd) {
 			return -1;
 		}
 
-		if (wait(NULL) == -1) {
-			printf("Error waiting for child process.\n");
+		do {
+			wait_pid = wait(&status);
+		} while ((wait_pid == -1) && (errno == EINTR));
+
+
+		if (wait_pid == -1) {
+			perror("Error waiting for child process");
 			return -1;
 		}
 
@@ -275,12 +283,17 @@ char *trim_start(char *string) {
 }
 
 /* Execute a file line by line. */
-int execute_file(char *path) {
+int execute_file(char *command) {
 	FILE *fp;
 	ssize_t read;
 	size_t len;
-	char *line;
+	char *path, *line;
 	int run_result;
+
+	/* As executing a file is done by giving the command '. <filename>',
+	 * extract the filename, by creating a pointer to that start of the
+	 * filename in the command string. */
+	path = &command[2];
 
 	run_result = 0;
 
@@ -326,6 +339,12 @@ int run_line(char *line, int may_cd) {
 	char *possible_cd;
 	int do_cd;
 
+	if (line == NULL) {
+		/* End of file, terminate. */
+		printf("\n");
+		return TERMINATE;
+	}
+
 	possible_cd = NULL;
 
 	line = trim_start(line);
@@ -367,7 +386,7 @@ int run_line(char *line, int may_cd) {
 		/* Change directory to the given path. */
 		return cd(line);
 	}
-	else if (strchr(line, '/') != NULL) {
+	else if (line[0] == '/') {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
@@ -394,44 +413,64 @@ int run_line(char *line, int may_cd) {
 	}
 }
 
-void make_user_friendly(char *cwd) {
-	char *line_end;
-	int cwd_len;
+char *build_prompt() {
+	char *cwd, *prompt;
 
-	cwd_len = strlen(cwd) + 4;
-	line_end = malloc(sizeof(char) * cwd_len);
-	strcpy(line_end, " $ ");
-	strcat(cwd, line_end);
-	free(line_end);
+	cwd = get_current_dir_name();
+
+	prompt = malloc(strlen(cwd) + 4);
+	prompt = strcpy(prompt, cwd);
+	prompt = strcat(prompt, " $ ");
+
+	free(cwd);
+
+	return prompt;
 }
 
+/*void prompt_sigint_handler(int sig_no) {
+	char *prompt;
+
+	prompt = build_prompt();
+
+	printf("\n%s", prompt);
+
+	free(prompt);
+}*/
+
 void sigint_handler(int sig_no){
-	if(!child_process){
-		printf("Nothing to close\n.");
-	}
+	printf("\n");
 }
 
 int main(int argc, char *argv[]) {
-	char *cwd, *user_input;
+	char *prompt, *user_input;
 	int running, run_result;
 
 	running = 1;
 
-	/* Create a new sigaction for ^C interups */
+	/* Create a new sigaction for ^C interups. */
+/*	memset(&prompt_action, 0, sizeof(prompt_action));
+	prompt_action.sa_handler = &prompt_sigint_handler;*/
+
+	/* Prepare a sigaction for when a piping string of commands is interrupted
+	 * by the keyboard (^C). */
+/*	memset(&piping_action, 0, sizeof(piping_action));
+	piping_action.sa_handler = &piping_sigint_handler;*/
+
+ /* Create a new sigaction for ^C interups */
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
 	action.sa_handler = &sigint_handler;
 
-	/* Redirect sigaction to escape ^C interups */
+	/* Redirect sigaction to escape keyboard interups. */
 	sigaction(SIGINT, &action, &old_action);
 
-
 	while (running) {
-		cwd = get_current_dir_name();
-		make_user_friendly(cwd);
-		user_input = readline(cwd);
 
-		add_history (user_input);
+		prompt = build_prompt();
+
+		user_input = readline(prompt);
+
+		add_history(user_input);
 		
 		run_result = run_line(user_input, ALLOW_CD);
 		child_process = 0;
@@ -442,11 +481,12 @@ int main(int argc, char *argv[]) {
 		else if (run_result == TERMINATE)
 			running = 0;
 
-		free(cwd);
+		free(prompt);
 		free(user_input);
 
 		/* Redirect sigaction to escape ^C interups */
 		//sigaction(SIGINT, &action, &old_action);
+
 	}
 
 	return 0;
