@@ -1,21 +1,16 @@
-#define CHILD 0
-#define MAX_INSTRUCTIONS 10
-#define TERMINATE 1
-#define ALLOW_CD 1
-#define DISALLOW_CD 0
+/* Shell / bp_handler.h
+ *
+ * bp_handler contains all prototypes and constants for the 
+ * functions.
+ *
+ * The following files are needed to run the shell:
+ * bp.h, bp.c, bp_handler.c, bp_handler.h and (optional) Makefile.
+ * 
+ * Authors: 
+ * -Bas van den Heuvel
+ * -Bram van den Akker
+ */
 
-typedef struct instruction_struct {
-	char **command;
-	struct instruction_struct *child;
-} instruction;
-
-instruction *create_instruction(char **);
-int destroy_instruction(instruction *);
-int execute_commands(instruction *, int);
-instruction *parse_command(char *);
-char *read_line();
-int run_line(char *, int);
-int execute_file(char *);
-char *trim_start(char *);
+void sigint_handler(int sig_no);
 char *build_prompt();
-void sigint_handler(int);
+int run_line(char *line, int may_cd);
