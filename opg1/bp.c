@@ -1,12 +1,15 @@
 /* Shell / bp.c
  *
+ * Authors: 
+ * -Bas van den Heuvel
+ * -Bram van den Akker
+ *
  * The following program is a linux command shell. 
  * Bp has the following features:
  * - Parsing commands to allow the use of arguments
  * - Piping command output to other commands.
  * - Using the readline/history package to easily reuse used commands
  * - Catching keyboard sigint calls and redirecting them in the parent proces
- * - 
  *
  * Readline/history.h might not work in the first place. In this case please
  * download readline by using the follow command in the terminal 
@@ -15,27 +18,17 @@
  * sudo apt-get install libreadline6 libreadline6-dev
  * 
  * The following files are needed to run the shell:
- * bp.h, bp.c, bp_handler.c, bp_handler.h and (optional) Makefile.
+ * bp.{c,h}, bp_handler.{c,h}, bp_instruction.{c,h} and (optional) Makefile.
  *
  * The shell can be exited by typing 'exit' when prompted for input.
  * ^C will not exit the shell therefore in case of an emergency ^D can be used 
- * to close the shell. 
- * 
- * Authors: 
- * -Bas van den Heuvel
- * -Bram van den Akker
- */
+ * to close the shell. */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
+#include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 

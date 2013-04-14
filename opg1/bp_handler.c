@@ -1,65 +1,26 @@
 /* Shell / bp_handler.c
  *
- * bp_handler contains all functions for handling commands.
- * 
- * The following files are needed to run the shell:
- * bp.h, bp.c, bp_handler.c, bp_handler.h and (optional) Makefile.
- * 
- * Authors: 
+ * Authors:
  * -Bas van den Heuvel
  * -Bram van den Akker
- */
+ *
+ * All functions for handling commands.
+ * 
+ * The following files are needed to run the shell:
+ * bp.{c,h}, bp_handler.{c,h}, bp_instruction.{c,h} and (optional) Makefile. */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <ctype.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <errno.h>
+#include <string.h>
+#include <ctype.h>
 
+#include "bp_instruction.h"
 #include "bp_handler.h"
-#include "bp.h"
-
-
-/* Construct an instruction.
- *
- * Returns NULL on failure, a pointer to the newly created instruction on
- * success. */
-instruction *create_instruction(char **command) {
-	instruction *instr;
-
-	instr = malloc(sizeof(instruction));
-	if (instr == NULL)
-		return NULL;
-
-	instr->command = command;
-
-	instr->child = NULL;
-
-	return instr;
-}
-
-/* Destroy an instruction, destroying its child recursively.
- *
- * Returns -1 if the given instruction is a NULL pointer, returns 0 on
- * success. */
-int destroy_instruction(instruction *instr) {
-	if (instr == NULL)
-		return 0;
-
-	destroy_instruction(instr->child);
-
-	free(instr->command);
-	free(instr);
-
-	return 1;
-}
 
 int execute_commands(instruction *instr, int input_fd) {
 	int fd[2], status;
@@ -396,5 +357,3 @@ int run_line(char *line, int may_cd) {
 		return 0;
 	}
 }
-
-

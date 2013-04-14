@@ -1,18 +1,16 @@
 /* Shell / bp_handler.h
  *
- * bp_handler contains all prototypes, constants and structs for the command 
- * handling functions.
- *
- * The following files are needed to run the shell:
- * bp.h, bp.c, bp_handler.c, bp_handler.h and (optional) Makefile.
- * 
  * Authors: 
  * -Bas van den Heuvel
  * -Bram van den Akker
- */
+ *
+ * All prototypes, constants and structs for the command handling functions.
+ *
+ * The following files are needed to run the shell:
+ * bp.{c,h}, bp_handler.{c,h}, bp_instruction.{c,h} and (optional) Makefile. */
 
-#ifndef HANDLER
-#define HANDLER
+#ifndef BP_HANDLER_H
+#define BP_HANDLER_H
 
 #define CHILD 0
 #define MAX_INSTRUCTIONS 10
@@ -23,15 +21,10 @@
 struct sigaction old_action;
 int child_process;
 
-typedef struct instruction_struct {
-	char **command;
-	struct instruction_struct *child;
-} instruction;
+struct instruction_struct;
 
-instruction *create_instruction(char **command);
-int destroy_instruction(instruction *instr);
-int execute_commands(instruction *instr, int input_fd);
-instruction *parse_command(char *command_line);
+int execute_commands(struct instruction_struct *instr, int input_fd);
+struct instruction_struct *parse_command(char *command_line);
 int cd(char *cmd);
 char *trim_start(char *string);
 int execute_file(char *command);
