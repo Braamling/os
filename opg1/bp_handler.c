@@ -349,6 +349,12 @@ int run_line(char *line, int may_cd) {
 	}
 	else if (line[0] == '.') {
 
+		/* Check if the user is trying to execute a local file. */
+		if (line[1] == '/') {
+			printf("[warning] Cannot execute binary outside PATH.\n");
+			return -1;
+		}
+
 		/* Run commands from a file. */
 		return execute_file(line);
 	}
@@ -368,7 +374,7 @@ int run_line(char *line, int may_cd) {
 
 		/* If a '/' occurs in a command, the user could run mallicious code.
 		 * This is not allowed. */
-		printf("[warning] Cannot execute binairy outside PATH.\n");
+		printf("[warning] Cannot execute binary outside PATH.\n");
 		return -1;
 	}
 	else {
