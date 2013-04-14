@@ -237,7 +237,8 @@ int execute_file(char *command) {
 	ssize_t read;
 	size_t len;
 	char *path, *line;
-	int run_result;
+	int run_result, status;
+	pid_t pid, wait_pid;
 
 	/* As executing a file is done by giving the command '. <filename>',
 	 * extract the filename, by creating a pointer to that start of the
@@ -253,28 +254,57 @@ int execute_file(char *command) {
 	len = 0;
 	line = NULL;
 
-	while ((read = getline(&line, &len, fp)) != -1) {
+	/* Fork the process, so the execution of the entire file can be terminated
+	 * upon sigint, as else only one instruction would be terminated. */
+	pid = fork();
 
-		/* Remove the newline char from the line. */
-		if (line[read - 1] == '\n')
-			line[read - 1] = '\0';
-
-		run_result = run_line(line, DISALLOW_CD);
-
-		/* If the file called 'exit', stop executing the file, but don't stop
-		 * the shell. */
-		if (run_result == TERMINATE) {
-			run_result = 0;
-			break;
-		}
-		else if (run_result == -1) {
-
-			/* An instruction failed, break off execution. */
-			break;
-		}
+	if (pid == -1) {
+		perror("Error forking process");
+		return -1;
 	}
 
-	free(line);
+	child_process = 1;
+
+	if (pid == 0) {
+
+		/* Reactivate the ^C termination sigaction sigint. */
+		sigaction(SIGINT, &old_action, NULL);
+
+		while ((read = getline(&line, &len, fp)) != -1) {
+
+			/* Remove the newline char from the line. */
+			if (line[read - 1] == '\n')
+				line[read - 1] = '\0';
+
+			run_result = run_line(line, DISALLOW_CD);
+
+			/* If the file called 'exit', stop executing the file, but don't
+			 * stop the shell. */
+			if (run_result == TERMINATE) {
+				run_result = 0;
+				break;
+			}
+			else if (run_result == -1) {
+
+				/* An instruction failed, break off execution. */
+				break;
+			}
+		}
+
+		free(line);
+
+		exit(0);
+	}
+	else {
+		do {
+			wait_pid = wait(&status);
+		} while ((wait_pid == -1) && (errno == EINTR));
+
+		if (wait_pid == -1) {
+			perror("Error waiting for child process");
+			return -1;
+		}
+	}
 
 	return run_result;
 }
