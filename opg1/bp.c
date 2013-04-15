@@ -35,6 +35,8 @@
 #include "bp.h"
 #include "bp_handler.h"
 
+/* Function that is called after catching a sigint interupt. 
+ */
 void sigint_handler(int sig_no){
 	char *prompt;
 
@@ -50,6 +52,8 @@ void sigint_handler(int sig_no){
 	}
 }
 
+/* Function for building a prompt string consisting of the path and a prompt 
+ * character. Returns the prompt message as a char pointer. */
 char *build_prompt() {
 	char *cwd, *prompt;
 
@@ -63,7 +67,6 @@ char *build_prompt() {
 
 	return prompt;
 }
-
 
 int main(int argc, char *argv[]) {
 	char *prompt, *user_input;

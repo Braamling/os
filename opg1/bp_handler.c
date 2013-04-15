@@ -22,6 +22,22 @@
 #include "bp_instruction.h"
 #include "bp_handler.h"
 
+/* Print the shell's help message. Doesn't take any arguments and doesn't
+ * return any values. */
+void print_help(){
+	printf("Welcome to the bp shell. \n");
+	printf("\n");
+	printf("You can run binaries from PATH.\n");
+	printf("\n");
+	printf("Example commands:\n");
+	printf("<command> [| .. | <command>]\t piping.\n");
+	printf(". <filename>\t\t\t to run a file.\n");
+	printf("cd \t\t\t\t to change working directory\n");
+	printf("help\t\t\t\t show help.\n");
+	printf("exit\t\t\t\t to exit the shell.\n");
+	printf("\n");
+}
+
 int execute_commands(instruction *instr, int input_fd) {
 	int fd[2], status;
 	pid_t pid, wait_pid;
@@ -43,11 +59,9 @@ int execute_commands(instruction *instr, int input_fd) {
 		return -1;
 	}
 
-	/* Hier moet je toch echt even een beter stukje commentaar zetten dan
-	 * 'ranzig'. */
 	child_process = 1;
 
-	if (pid == CHILD) {
+	if (pid == 0) {
 
 		/* Reactivate the ^C termination sigaction sigint. */
 		sigaction(SIGINT, &old_action, NULL);
@@ -179,33 +193,6 @@ instruction *parse_command(char *command_line) {
 	
 
 	return first_instruction;
-}
-
-/* Reads the user's input. Returns a string with the input. */
-char *read_line(char *dir){
-	char buffer[128], *input;
-	int buffer_size, size, i;
-
-	printf("%s $ ",dir);
-	fgets(buffer, sizeof(buffer), stdin);
-
-	buffer_size = strlen(buffer);
-
-	size 	= (sizeof(char) * buffer_size);
-	input 	= malloc(size);
-
-	/* Remove the newline character read by fgets. */
-	for (i = 0; i < buffer_size; i++) {
-		if (buffer[i] != '\n') {
-			input[i] = buffer[i];
-		}
-		else {
-			input[i] = '\0';
-			break;
-		}
-	}
-
-	return input;
 }
 
 /* Change directory. Input is the command, including 'cd'. */
@@ -340,6 +327,10 @@ int run_line(char *line, int may_cd) {
 	if (strcmp(line, "") == 0) {
 
 		/* No command given, do nothing. */
+		return 0;
+	}
+	if (strcmp(line, "help") == 0) {
+		print_help();
 		return 0;
 	}
 	else if (strcmp(line, "exit") == 0) {

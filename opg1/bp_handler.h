@@ -12,7 +12,6 @@
 #ifndef BP_HANDLER_H
 #define BP_HANDLER_H
 
-#define CHILD 0
 #define MAX_INSTRUCTIONS 10
 #define TERMINATE 1
 #define ALLOW_CD 1
@@ -29,5 +28,6 @@ int cd(char *cmd);
 char *trim_start(char *string);
 int execute_file(char *command);
 int run_line(char *line, int may_cd);
+void print_help();
 
 #endif

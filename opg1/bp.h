@@ -11,6 +11,6 @@
  * -Bram van den Akker
  */
 
+void print_help();
 void sigint_handler(int sig_no);
 char *build_prompt();
-int run_line(char *line, int may_cd);
