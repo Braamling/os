@@ -30,11 +30,12 @@ void print_help(){
 	printf("You can run binaries from PATH.\n");
 	printf("\n");
 	printf("Example commands:\n");
-	printf("<command> [| .. | <command>]\t piping.\n");
-	printf(". <filename>\t\t\t to run a file.\n");
-	printf("cd \t\t\t\t to change working directory\n");
-	printf("help\t\t\t\t show help.\n");
-	printf("exit\t\t\t\t to exit the shell.\n");
+	printf("<command> [| .. | <command>]\t Run commands, possibly piping ");
+	printf("output to the next commands.\n");
+	printf(". <filename>\t\t\t To run a file.\n");
+	printf("cd \t\t\t\t To change working directory\n");
+	printf("help\t\t\t\t Show help.\n");
+	printf("exit\t\t\t\t To exit the shell.\n");
 	printf("\n");
 }
 
