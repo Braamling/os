@@ -64,17 +64,24 @@ int pcb_move_after(pcb *item, pcb *new_next){
 }
 
 /* Remove a PCB from a list of PCB's. */
-int pcb_remove(pcb *item) {
+pcb *pcb_remove(pcb *item) {
+	pcb *new_next;
+
 	if (item == NULL)
-		return -1;
+		return NULL;
 
 	if (item->prev != NULL)
 		item->prev->next = item->next;
 
+	new_next = item->next;
+
 	if (item->next != NULL)
 		item->next->prev = item->prev;
 
-	return 0;
+	item->prev = NULL;
+	item->next = NULL;
+
+	return new_next;
 }
 
 /* Get the next item in a list of PCB's. */

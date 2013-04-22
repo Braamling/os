@@ -9,7 +9,7 @@ int pcb_insert_before(pcb *item, pcb *next_item);
 int pcb_insert_after(pcb *item, pcb *prev_item);
 
 /* Remove a PCB from a list of PCB's. */
-int pcb_remove(pcb *item);
+pcb *pcb_remove(pcb *item);
 
 /* Move a PCB to a new position before another one in a list of PCB's. */
 int pcb_move_before(pcb *item, pcb *next_item);

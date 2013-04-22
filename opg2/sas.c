@@ -31,10 +31,12 @@ static void GiveMemory() {
             pcb_set_mem_base(proc, MEM_base);
 
             ready_proc_last = pcb_get_last(ready_proc);
-            if (ready_proc_last != NULL)
-                pcb_move_before(proc, ready_proc_last);
+            if (ready_proc_last != NULL) {
+                new_proc = pcb_remove(proc);
+                pcb_insert_after(proc, ready_proc_last);
+            }
             else {
-                pcb_remove(proc);
+                new_proc = pcb_remove(proc);
                 ready_proc = proc;
             }
 
@@ -95,6 +97,7 @@ void schedule(event_type event) {
             GiveMemory();
             break;
         case Time_event:
+            break;
         case IO_event:
             CPU_scheduler();
             break;
