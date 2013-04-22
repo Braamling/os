@@ -23,6 +23,12 @@ pcb *pcb_get_next(pcb *item);
 /* Get the previous item in a list of PCB's. */
 pcb *pcb_get_prev(pcb *item);
 
+/* Get the first item in a list of PCB's. */
+pcb *pcb_get_first(pcb *list);
+
+/* Get the last item in a list of PCB's. */
+pcb *pcb_get_last(pcb *list);
+
 /* Get the amount of MEM the PCB needs. */
 long pcb_get_mem_need(pcb *item);
 

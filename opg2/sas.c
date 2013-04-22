@@ -20,24 +20,30 @@ static void CPU_scheduler() {
 
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
-    int index;
-    pcb *proc1, *proc2, *proc3;
+    long MEM_base;
+    pcb *proc, *ready_proc_last;
 
-    proc2 = new_proc;
-    while (proc2) {
+    proc = pcb_get_first(new_proc);
+    while (proc != NULL) {
+        MEM_base = mem_get(pcb_get_mem_need(proc));
 
-        /* Search for a new process that should be given memory.
-         * Insert search code and criteria here.
-         * Attempt to allocate as follows: */
-        index = mem_get(proc2->MEM_need);
-        if (index >= 0) {
+        if (MEM_base >= 0) {
+            pcb_set_mem_base(proc, MEM_base);
 
-            /* Allocation succeeded, now put in administration. */
-            proc2->MEM_base = index;
+            ready_proc_last = pcb_get_last(ready_proc);
+            if (ready_proc_last != NULL)
+                pcb_move_before(proc, ready_proc_last);
+            else {
+                pcb_remove(proc);
+                ready_proc = proc;
+            }
 
-            /* You might want to move this process to the ready queue now. */
+            proc = pcb_get_next(proc);
         }
     }
+
+    // new_proc = NULL;
+    // ready_proc = pcb_get_first(proc);
 }
 
 /* Here we reclaim the memory of a process after it has finished. */
