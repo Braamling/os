@@ -4,7 +4,7 @@ CFLAGS=-Wall -std=c99 -pedantic -lm -ggdb -lreadline -D_GNU_SOURCE
 %.o: %.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-sas: sas.c mt19937ar.o simul.o mem_alloc.o
+sas: sas.c mt19937ar.o simul.o mem_alloc.o pcb_control.o
 	$(CC) $^ $(CFLAGS) -o $@
 
 all: sas

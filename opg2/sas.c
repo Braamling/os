@@ -1,12 +1,13 @@
+/* Authors:
+ * -Bas van den Heuvel
+ * -Bram van den Akker */
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "schedule.h"
+#include "pcb_control.h"
 #include "mem_alloc.h"
-
-/* Authors:
- * -Bas van den Heuvel
- * -Bram van den Akker */
 
 /* This variable will simulate the allocatable memory. */
 static long memory[MEM_SIZE];
