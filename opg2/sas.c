@@ -20,62 +20,17 @@ static void CPU_scheduler() {
 
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
-    long MEM_base;
-    pcb *proc, *ready_proc_last;
-
-    proc = pcb_get_first(new_proc);
-    while (proc != NULL) {
-        MEM_base = mem_get(pcb_get_mem_need(proc));
-
-        if (MEM_base >= 0) {
-            pcb_set_mem_base(proc, MEM_base);
-
-            ready_proc_last = pcb_get_last(ready_proc);
-            if (ready_proc_last != NULL) {
-                new_proc = pcb_remove(proc);
-                pcb_insert_after(proc, ready_proc_last);
-            }
-            else {
-                new_proc = pcb_remove(proc);
-                ready_proc = proc;
-            }
-
-            proc = pcb_get_next(proc);
-        }
-    }
-
-    // new_proc = NULL;
-    // ready_proc = pcb_get_first(proc);
+    
 }
 
 /* Here we reclaim the memory of a process after it has finished. */
 static void ReclaimMemory() {
-    pcb *proc;
-
-    proc = defunct_proc;
-    while (proc) {
-
-        /* Free your own administrative structure if it exists. */
-        if (proc->your_admin) {
-            free(proc->your_admin);
-        }
-
-        /* Free the simulated allocated memory. */
-        mem_free(proc->MEM_base);
-        proc->MEM_base = -1;
-
-        /* Call the function that cleans up the simulated process. */
-        rm_process(&proc);
-
-        /* See if there are more processes to be removed. */
-        proc = defunct_proc;
-    }
+    
 }
 
 /* You may want to have the last word... */
 static void my_finale() {
     
-    /* Your very own code goes here. */
 }
 
 /* The main scheduling routine. */

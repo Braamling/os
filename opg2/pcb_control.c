@@ -3,144 +3,186 @@
 #include "schedule.h"
 #include "pcb_control.h"
 
-int pcb_insert_before(pcb *item, pcb *next_item){
-	if (item == NULL)
-		return -1;
-
-	if (next_item == NULL)
-		return -1;
-	
-	item->next = next_item;
-
-	item->prev = next_item->prev;
-
-	if (item->prev != NULL) {
-		item->prev->next = item;
-	}
-
-	next_item->prev = item;
-
-	return 0;
-}
-
-int pcb_insert_after(pcb *item, pcb *prev_item){
-	if (item == NULL)
-		return -1;
-
-	if (prev_item == NULL)
-		return -1;
-
-	item->prev = prev_item;
-
-	item->next = prev_item->next;
-
-	if (item->next != NULL) {
-		item->next->prev = item;
-	}
-
-	prev_item->next = item;
-
-	return 0;
-}
-
-int pcb_move_before(pcb *item, pcb *new_next){
-	if(pcb_remove(item) == -1){
-		return -1;
-	}
-	if(pcb_insert_before(item, new_next) == -1){
-		return -1;
-	}
-	return 0;
-}
-
-int pcb_move_after(pcb *item, pcb *new_next){
-	if(pcb_remove(item) == -1){
-		return -1;
-	}
-	if(pcb_insert_after(item, new_next) == -1){
-		return -1;
-	}
-	return 0;
-}
-
-/* Remove a PCB from a list of PCB's. */
-pcb *pcb_remove(pcb *item) {
-	pcb *new_next;
-
-	if (item == NULL)
-		return NULL;
-
-	if (item->prev != NULL)
-		item->prev->next = item->next;
-
-	new_next = item->next;
-
-	if (item->next != NULL)
-		item->next->prev = item->prev;
-
-	item->prev = NULL;
-	item->next = NULL;
-
-	return new_next;
-}
-
-/* Get the next item in a list of PCB's. */
+/* Get the next item in a list of PCB's.
+ *
+ * Arguments:
+ * -pcb *item: The item to get the next item from.
+ *
+ * Results:
+ * -Success: The next item relative to the item.
+ * -Failure: NULL. */
 pcb *pcb_get_next(pcb *item) {
-	if (item == NULL)
+	if (!item)
 		return NULL;
 
 	return item->next;
 }
 
-/* Get the previous item in a list of PCB's. */
+/* Get the previous item in a list of PCB's.
+ *
+ * Arguments:
+ * -pcb *item: The item to get the previous item from.
+ *
+ * Results:
+ * -Success: The previous item relative to the item.
+ * -Failure: NULL. */
 pcb *pcb_get_prev(pcb *item) {
-	if (item == NULL)
+	if (!item)
 		return NULL;
 
 	return item->prev;
 }
 
-/* Get the first item in a list of PCB's. */
-pcb *pcb_get_first(pcb *list) {
-	pcb *item;
-
-	if (list == NULL)
-		return NULL;
-
-	item = list;
-	while (item->prev != NULL)
-		item = item->prev;
-
-	return item;
-}
-
-/* Get the last item in a list of PCB's. */
-pcb *pcb_get_last(pcb *list) {
-	pcb *item;
-
-	if (list == NULL)
-		return NULL;
-
-	item = list;
-	while (item->next != NULL)
-		item = item->next;
-
-	return item;
-}
-
-/* Get the amount of MEM the PCB needs. */
+/* Get the amount of MEM the PCB needs.
+ *
+ * Arguments:
+ * -pcb *item: The item to get the memory needed from.
+ *
+ * Results:
+ * -Success: The memory the item needs.
+ * -Failure: -1. */
 long pcb_get_mem_need(pcb *item) {
-	if (item == NULL)
+	if (!item)
 		return -1;
 
 	return item->MEM_need;
 }
 
-/* Set the base of the PCB's MEM. */
+/* Set the base of MEM for the PCB.
+ *
+ * Arguments:
+ * -pcb *item: The item to set the memory base to.
+ *
+ * Results:
+ * -Success: 0.
+ * -Failure: -1. */
 int pcb_set_mem_base(pcb *item, long MEM_base) {
-	if (item == NULL)
+	if (!item)
 		return -1;
 
 	item->MEM_base = MEM_base;
 	return 0;
+}
+
+/* Find the head of a list.
+ *
+ * Arguments:
+ * -pcb *item: The item in the list to look through.
+ *
+ * Results:
+ * -Success: The head of the list.
+ * -Failure: NULL. */
+pcb *pcb_find_head(pcb *item) {
+	if (!item)
+		return NULL;
+
+	while (item->prev)
+		item = pcb_get_prev(item);
+
+	return item;
+}
+
+/* Find the tail of a list.
+ *
+ * Arguments:
+ * -pcb *item: The item in the list to look through.
+ *
+ * Results:
+ * -Success: The tail of the list.
+ * -Failure: NULL. */
+pcb *pcb_find_tail(pcb *item) {
+	if (!item)
+		return NULL;
+
+	while (item->next)
+		item = pcb_get_next(item);
+
+	return item;
+}
+
+/* Insert an item into a list of PCB's before another one.
+ *
+ * Arguments:
+ * -pcb *item: The item to insert into the list.
+ * -pcb *before: The before which the item will be inserted.
+ *
+ * Results:
+ * -Success: The head of the list.
+ * -Failure: NULL. */
+pcb *pcb_insert_before(pcb *item, pcb *before) {
+	if (!item)
+		return NULL;
+
+	if (!before)
+		return NULL;
+
+	item->next = before->next;
+	before->next = item;
+
+	if (item->next)
+		item->next->prev = item;
+
+	item->prev = before;
+
+	return pcb_find_head(item);
+}
+
+/* Insert an item into a list of PCB's after another one.
+ *
+ * Arguments:
+ * -pcb *item: The item to insert into the list.
+ * -pcb *after: The after which the item will be inserted.
+ *
+ * Results:
+ * -Success: The head of the list.
+ * -Failure: NULL. */
+pcb *pcb_insert_after(pcb *item, pcb *after) {
+	if (!item)
+		return NULL;
+
+	if (!after)
+		return NULL;
+
+	item->prev = after->prev;
+	after->prev = item;
+
+	if (item->prev)
+		item->prev->next = item;
+
+	item->next = after;
+
+	return pcb_find_head(item);
+}
+
+/* Remove an item from a list of PCB's.
+ *
+ * Arguments:
+ * -pcb *item: The item in the list.
+ *
+ * Results:
+ * -Succes: The head of the list.
+ * -Failure: NULL. */
+pcb *pcb_remove(pcb *item) {
+	pcb *new_head, *next;
+
+	if (!item)
+		return NULL;
+
+	if (!item->next) {
+		new_head = item->prev;
+		item->prev = NULL;
+		new_head->next = NULL;
+
+		return new_head;
+	}
+
+	next = item->next;
+	next->prev = item->prev;
+
+	if (item->prev)
+		item->prev->next = next;
+
+	item->next = item->prev = NULL;
+
+	return pcb_find_head(next);
 }
