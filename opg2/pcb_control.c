@@ -116,13 +116,13 @@ pcb *pcb_insert_before(pcb *item, pcb *before) {
 	if (!before)
 		return NULL;
 
-	item->next = before->next;
-	before->next = item;
+	item->prev = before->prev;
+	before->prev = item;
 
-	if (item->next)
-		item->next->prev = item;
+	if (item->prev)
+		item->prev->next = item;
 
-	item->prev = before;
+	item->next = before;
 
 	return pcb_find_head(item);
 }
@@ -143,13 +143,13 @@ pcb *pcb_insert_after(pcb *item, pcb *after) {
 	if (!after)
 		return NULL;
 
-	item->prev = after->prev;
-	after->prev = item;
+	item->next = after->next;
+	after->next = item;
 
-	if (item->prev)
-		item->prev->next = item;
+	if (item->next)
+		item->next->prev = item;
 
-	item->next = after;
+	item->prev = after;
 
 	return pcb_find_head(item);
 }
@@ -171,7 +171,9 @@ pcb *pcb_remove(pcb *item) {
 	if (!item->next) {
 		new_head = item->prev;
 		item->prev = NULL;
-		new_head->next = NULL;
+
+		if (new_head)
+			new_head->next = NULL;
 
 		return new_head;
 	}

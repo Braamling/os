@@ -20,7 +20,32 @@ static void CPU_scheduler() {
 
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
-    
+    long mem_need, assigned_mem_base;
+    pcb *proc, *ready_tail;
+
+    proc = new_proc;
+
+    if (!proc)
+        return;
+
+    mem_need = pcb_get_mem_need(proc);
+    if (mem_need == -1)
+        return;
+
+    assigned_mem_base = mem_get(mem_need);
+    if (assigned_mem_base == -1)
+        return;
+
+    pcb_set_mem_base(proc, assigned_mem_base);
+
+    /* Move the pcb to the ready queue. */
+    new_proc = pcb_remove(proc);
+    ready_tail = pcb_find_tail(ready_proc);
+
+    if (!ready_tail)
+        ready_proc = proc;
+    else
+        ready_proc = pcb_insert_after(proc, ready_tail);
 }
 
 /* Here we reclaim the memory of a process after it has finished. */
