@@ -48,6 +48,21 @@ long pcb_get_mem_need(pcb *item) {
 	return item->MEM_need;
 }
 
+/* Get the base of the MEM the PCB has.
+ *
+ * Arguments:
+ * -pcb *item: The item to get the memory base from.
+ *
+ * Results:
+ * -Success: The memory base from the item.
+ * -Failure: -1. */
+long pcb_get_mem_base(pcb *item) {
+	if (!item)
+		return -1;
+
+	return item->MEM_base;
+}
+
 /* Set the base of MEM for the PCB.
  *
  * Arguments:

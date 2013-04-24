@@ -50,7 +50,27 @@ static void GiveMemory() {
 
 /* Here we reclaim the memory of a process after it has finished. */
 static void ReclaimMemory() {
-    
+    pcb *proc;
+    long mem_base;
+
+    proc = defunct_proc;
+
+    while (proc) {
+        mem_base = pcb_get_mem_base(proc);
+        if (mem_base >= 0) {
+            mem_free(mem_base);
+            pcb_set_mem_base(proc, -1);
+        }
+
+        if (proc->your_admin) {
+            /* Release admin. */
+        }
+
+        rm_process(&proc);
+
+        defunct_proc = pcb_remove(proc);
+        proc = defunct_proc;
+    }
 }
 
 /* You may want to have the last word... */
