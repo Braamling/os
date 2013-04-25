@@ -51,6 +51,8 @@ static void GiveMemory() {
     else
         ready_proc = pcb_insert_after(proc, ready_tail);
 
+    set_slice(SLICE);
+
     give_mem ++;
 }
 
@@ -79,6 +81,34 @@ static void ReclaimMemory() {
     }
 }
 
+static void schedule_to_back() {
+    pcb *proc, *ready_tail;
+
+    // printf("yay!\n");
+
+    proc = ready_proc;
+
+    if (proc) {
+        ready_proc = pcb_remove(proc);
+
+        if (!ready_proc)
+            ready_proc = proc;
+        else {
+            ready_tail = pcb_find_tail(ready_proc);
+            ready_proc = pcb_insert_after(proc, ready_tail);
+        }
+
+        printf("timeout: %ld", proc->proc_num);
+
+        if (ready_proc)
+            printf(", new: %ld", ready_proc->proc_num);
+
+        printf(".\n");
+
+        set_slice(SLICE);
+    }
+}
+
 /* You may want to have the last word... */
 static void my_finale() {
     
@@ -104,6 +134,7 @@ void schedule(event_type event) {
             GiveMemory();
             break;
         case Time_event:
+            schedule_to_back();
             break;
         case IO_event:
             CPU_scheduler();
