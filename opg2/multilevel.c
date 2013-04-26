@@ -13,17 +13,16 @@
  * Results:
  * -Succes: A pointer to the last pcb in de queue.
  * -Fail: NULL. */
-pcb *pcb_find_level_tail(pcb *queue, int level){
+pcb *pcb_find_level_tail(int level){
 	pcb *item;
 
-	if (!queue)
+	if (!ready_proc)
 		return NULL;
 
-	item = queue;
-
-	if(pcb_get_queue_level(item) > level)
+	if(pcb_get_queue_level(ready_proc) > level)
 		return NULL;
 
+	item = ready_proc;
 	while (item->next && (pcb_get_queue_level(item) <= level))
 		item = pcb_get_next(item);
 
@@ -41,28 +40,28 @@ pcb *pcb_find_level_tail(pcb *queue, int level){
  * Results:
  * -Succes: A pointer to the last pcb in de queue.
  * -Fail: NULL. */
-pcb *pcb_move_to_level(pcb *item, int level){
-	pcb* tail;
+int pcb_move_to_level(pcb *item, int level){
+	pcb* level_tail;
 
 	if (!item)
-		return NULL;
+		return -1;
 
 	if(level < 0)
-		return NULL;
-	
+		return -1;
 
-	tail = pcb_find_level_tail(ready_proc, level);
+	((pcb_admin *)item->your_admin)->queue_level = level;
 
-	if(!tail){
-		tail = pcb_insert_before(ready_proc, tail);
-		if(!tail)
-			ready_proc = tail;
+	level_tail = pcb_find_level_tail(level);
+
+	if(!level_tail){
+		ready_proc = pcb_insert_before(ready_proc, level_tail);
+		if(!ready_proc)
+			ready_proc = item;
 	}
+	else
+		ready_proc = pcb_insert_after(item, level_tail);
 
-	if(tail)
-		pcb_insert_after(item, tail);
-
-	return item;
+	return 0;
 }
 
 /* Increase the queue level of an item in the ready queue after an timeout.
@@ -73,13 +72,13 @@ pcb *pcb_move_to_level(pcb *item, int level){
  * Results:
  * -Succes: A pointer to the item in the queue.
  * -Fail: NULL. */
-pcb *pcb_increase_level(pcb *item){
+int pcb_increase_level(pcb *item){
 	if (!item)
-		return NULL;
+		return -1;
 
-	((struct your_admin *)item->your_admin)->queue_level ++;
+	((pcb_admin *)item->your_admin)->queue_level ++;
 
-	return item;
+	return 0;
 }
 
 /* Increase the queue level of an item in the ready queue after an timeout.
@@ -90,13 +89,18 @@ pcb *pcb_increase_level(pcb *item){
  * Results:
  * -Succes: A pointer to the item in the queue.
  * -Fail: NULL. */
-pcb *pcb_place_in_ready_queue(pcb *item){
+int pcb_place_in_ready_queue(pcb *item){
+	pcb_admin *admin;
+
 	if (!item)
-		return NULL;
+		return -1;
+
+	admin = malloc(sizeof(pcb_admin));
+	item->your_admin = (void *)admin;
 
 	pcb_move_to_level(item, 1);
 
-	return item;
+	return 0;
 }
 
 /* Set a specific level for an item.
@@ -107,13 +111,13 @@ pcb *pcb_place_in_ready_queue(pcb *item){
  * Results:
  * -Succes: A pointer to the item in the queue.
  * -Fail: NULL. */
-pcb *pcb_set_queue_level(pcb *item, int level){
+int pcb_set_queue_level(pcb *item, int level){
 	if (!item)
-		return NULL;
+		return -1;
 
-	((struct your_admin *)item->your_admin)->queue_level = level;
+	((pcb_admin *)item->your_admin)->queue_level = level;
 
-	return item;
+	return 0;
 }
 
 /* Set a specific level for an item.
@@ -126,8 +130,8 @@ pcb *pcb_set_queue_level(pcb *item, int level){
  * -Fail: NULL. */
 int pcb_get_queue_level(pcb *item){
 	if (!item)
-		return 0;
+		return -1;
 
-	return ((struct your_admin *)item->your_admin)->queue_level;
+	return ((pcb_admin *)item->your_admin)->queue_level;
 }
 

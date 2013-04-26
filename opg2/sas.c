@@ -25,7 +25,7 @@ static void CPU_scheduler() {
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
     long mem_need, assigned_mem_base;
-    pcb *proc, *ready_tail;
+    pcb *proc;
 
     proc = new_proc;
 
@@ -47,12 +47,12 @@ static void GiveMemory() {
     new_proc = pcb_remove(proc);
 
     pcb_place_in_ready_queue(proc);
-/*    ready_tail = pcb_find_tail(ready_proc);
+    // ready_tail = pcb_find_tail(ready_proc);
 
-    if (!ready_tail)
-        ready_proc = proc;
-    else
-        ready_proc = pcb_insert_after(proc, ready_tail);*/
+    // if (!ready_tail)
+    //     ready_proc = proc;
+    // else
+    //     ready_proc = pcb_insert_after(proc, ready_tail);
 
     set_slice(SLICE);
 
@@ -75,7 +75,6 @@ static void ReclaimMemory() {
 
         if (proc->your_admin) {
             free(proc->your_admin);
-            /* Release admin. */
         }
 
         rm_process(&proc);
@@ -86,7 +85,7 @@ static void ReclaimMemory() {
 }
 
 static void schedule_to_back() {
-    pcb *proc, *ready_tail;
+    pcb *proc;
     int level;
 
     // printf("yay!\n");
@@ -100,7 +99,6 @@ static void schedule_to_back() {
         level = pcb_get_queue_level(proc);
 
         pcb_move_to_level(proc, level);
-
 
         // if (!ready_proc)
         //     ready_proc = proc;
@@ -121,33 +119,33 @@ static void schedule_to_back() {
 }
 
 /* OLD */
-static void schedule_to_back_old() {
-    pcb *proc, *ready_tail;
+// static void schedule_to_back_old() {
+//     pcb *proc, *ready_tail;
 
-    // printf("yay!\n");
+//     // printf("yay!\n");
 
-    proc = ready_proc;
+//     proc = ready_proc;
 
-    if (proc) {
-        ready_proc = pcb_remove(proc);
+//     if (proc) {
+//         ready_proc = pcb_remove(proc);
 
-        if (!ready_proc)
-            ready_proc = proc;
-        else {
-            ready_tail = pcb_find_tail(ready_proc);
-            ready_proc = pcb_insert_after(proc, ready_tail);
-        }
+//         if (!ready_proc)
+//             ready_proc = proc;
+//         else {
+//             ready_tail = pcb_find_tail(ready_proc);
+//             ready_proc = pcb_insert_after(proc, ready_tail);
+//         }
 
-        printf("timeout: %ld", proc->proc_num);
+//         printf("timeout: %ld", proc->proc_num);
 
-        if (ready_proc)
-            printf(", new: %ld", ready_proc->proc_num);
+//         if (ready_proc)
+//             printf(", new: %ld", ready_proc->proc_num);
 
-        printf(".\n");
+//         printf(".\n");
 
-        set_slice(SLICE);
-    }
-}
+//         set_slice(SLICE);
+//     }
+// }
 
 /* You may want to have the last word... */
 static void my_finale() {
