@@ -1,4 +1,9 @@
+/* Authors:
+ * -Bas van den Heuvel
+ * -Bram van den Akker */
+
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "schedule.h"
 #include "pcb_control.h"
@@ -38,8 +43,8 @@ pcb *pcb_find_level_tail(int level){
  * -int level: Queue level to put the item in in.
  * 
  * Results:
- * -Succes: A pointer to the last pcb in de queue.
- * -Fail: NULL. */
+ * -Succes: 0.
+ * -Fail: -1. */
 int pcb_move_to_level(pcb *item, int level){
 	pcb* level_tail;
 
@@ -53,13 +58,41 @@ int pcb_move_to_level(pcb *item, int level){
 
 	level_tail = pcb_find_level_tail(level);
 
-	if(!level_tail){
-		ready_proc = pcb_insert_before(ready_proc, level_tail);
-		if(!ready_proc)
-			ready_proc = item;
+
+	if(item == ready_proc){
+		return 0;
 	}
-	else
-		ready_proc = pcb_insert_after(item, level_tail);
+
+	if(!level_tail) {
+		if(!ready_proc){
+			ready_proc = item;
+			return 0;
+		}
+		else {
+			printf("stopped at level: %d \n", level);
+			if(level == 1){
+				ready_proc = pcb_insert_before(ready_proc, item);
+			}
+			while(level > 1) {
+				level_tail = pcb_find_level_tail(-- level);
+				if(level_tail){
+					printf("found at level: %d \n", level);
+					ready_proc = pcb_insert_after(level_tail, item);
+					return 0;
+				}
+			}
+		}
+
+		//ready_proc = pcb_insert_before(ready_proc, item);
+		
+		return -1;
+		// ready_proc = pcb_insert_before(ready_proc, level_tail);
+		// if(!ready_proc)
+		// 	ready_proc = item;
+	}
+	else {
+		ready_proc = pcb_insert_after(level_tail, item);
+	}
 
 	return 0;
 }
@@ -70,8 +103,8 @@ int pcb_move_to_level(pcb *item, int level){
  * -pcb *item: The item to increase in queue level.
  * 
  * Results:
- * -Succes: A pointer to the item in the queue.
- * -Fail: NULL. */
+ * -Succes: 0.
+ * -Fail: -1. */
 int pcb_increase_level(pcb *item){
 	if (!item)
 		return -1;
@@ -81,14 +114,14 @@ int pcb_increase_level(pcb *item){
 	return 0;
 }
 
-/* Increase the queue level of an item in the ready queue after an timeout.
+/* Places an item in de ready queue on level 1.
  * 
  * Arguments:
  * -pcb *item: The item to increase in queue level.
  * 
  * Results:
- * -Succes: A pointer to the item in the queue.
- * -Fail: NULL. */
+ * -Succes: 0.
+ * -Fail: -1. */
 int pcb_place_in_ready_queue(pcb *item){
 	pcb_admin *admin;
 
@@ -109,8 +142,8 @@ int pcb_place_in_ready_queue(pcb *item){
  * -pcb *item: The item to increase in queue level.
  * 
  * Results:
- * -Succes: A pointer to the item in the queue.
- * -Fail: NULL. */
+ * -Succes: 0.
+ * -Fail: -1. */
 int pcb_set_queue_level(pcb *item, int level){
 	if (!item)
 		return -1;
@@ -120,14 +153,14 @@ int pcb_set_queue_level(pcb *item, int level){
 	return 0;
 }
 
-/* Set a specific level for an item.
+/* Get the level of a specific pcb item.
  * 
  * Arguments:
  * -pcb *item: The item to increase in queue level.
  * 
  * Results:
- * -Succes: A pointer to the item in the queue.
- * -Fail: NULL. */
+ * -Succes: The queue level of the item.
+ * -Fail: -1. */
 int pcb_get_queue_level(pcb *item){
 	if (!item)
 		return -1;
