@@ -64,34 +64,22 @@ int pcb_move_to_level(pcb *item, int level){
 	}
 
 	if(!level_tail) {
+		/* If there are no entries in the ready proc queue the item replaces
+		 * the ready_proc */
 		if(!ready_proc){
 			ready_proc = item;
 			return 0;
 		}
+		/* if inserted in the first queue with no entries the entry can be 
+		 * placed before the first entry in the ready proc. */
 		else {
-			printf("stopped at level: %d \n", level);
-			if(level == 1){
-				ready_proc = pcb_insert_before(ready_proc, item);
-			}
-			while(level > 1) {
-				level_tail = pcb_find_level_tail(-- level);
-				if(level_tail){
-					printf("found at level: %d \n", level);
-					ready_proc = pcb_insert_after(level_tail, item);
-					return 0;
-				}
-			}
+			ready_proc = pcb_insert_before(ready_proc, item);
+			return 0;
 		}
-
-		//ready_proc = pcb_insert_before(ready_proc, item);
-		
-		return -1;
-		// ready_proc = pcb_insert_before(ready_proc, level_tail);
-		// if(!ready_proc)
-		// 	ready_proc = item;
 	}
 	else {
 		ready_proc = pcb_insert_after(level_tail, item);
+		return 0;
 	}
 
 	return 0;

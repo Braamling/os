@@ -93,6 +93,7 @@ static void schedule_to_back() {
     proc = ready_proc;
 
     if (proc) {
+        printf("proc: %ld \n", proc->proc_num);
         ready_proc = pcb_remove(proc);
 
         pcb_increase_level(proc);
@@ -119,7 +120,7 @@ static void schedule_to_back() {
 }
 
 /* OLD */
-// static void schedule_to_back_old() {
+// static void schedule_to_back() {
 //     pcb *proc, *ready_tail;
 
 //     // printf("yay!\n");
