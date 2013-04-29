@@ -93,12 +93,11 @@ static void schedule_to_back() {
     proc = ready_proc;
 
     if (proc) {
-        printf("proc: %ld \n", proc->proc_num);
+        printf("proc: %ld\n", proc->proc_num);
+
         ready_proc = pcb_remove(proc);
 
-        pcb_increase_level(proc);
-        level = pcb_get_queue_level(proc);
-
+        level = pcb_get_queue_level(proc) + 1;
         pcb_move_to_level(proc, level);
 
         // if (!ready_proc)
