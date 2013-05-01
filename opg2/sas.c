@@ -72,9 +72,8 @@ static void ReclaimMemory() {
             pcb_set_mem_base(proc, -1);
         }
 
-        if (proc->your_admin) {
-            free(proc->your_admin);
-        }
+        if (proc->your_admin)
+            pcb_admin_destroy(proc->your_admin);
 
         rm_process(&proc);
 
@@ -87,23 +86,13 @@ static void multi_level_scheduler() {
     pcb *proc;
     int level;
 
-
     proc = ready_proc;
 
     if (proc) {
-        printf("proc: %ld\n", proc->proc_num);
-
         ready_proc = pcb_remove(proc);
 
         level = pcb_get_queue_level(proc) + 1;
         pcb_move_to_level(proc, level);
-
-        printf("timeout: %ld", proc->proc_num);
-
-        if (ready_proc)
-            printf(", new: %ld", ready_proc->proc_num);
-
-        printf(".\n");
 
         set_slice(slice);
     }
@@ -172,7 +161,6 @@ void schedule(event_type event) {
             CPU_scheduler();
             break;
         case IO_event:
-            CPU_scheduler();
             break;
         case Ready_event:
             break;
@@ -180,7 +168,6 @@ void schedule(event_type event) {
             finished_event ++;
             ReclaimMemory();
             GiveMemory();
-            CPU_scheduler();
             break;
         default:
             printf("I cannot handle event nr. %d\n", event);
