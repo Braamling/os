@@ -82,6 +82,10 @@ static void ReclaimMemory() {
     }
 }
 
+/* Every proces that uses the cpu for longer then time slice will be place to 
+ * in a higher level queue. Only when all the lower queues are empty the higher
+ * queue will get cpu time. 
+ */
 static void multi_level_scheduler() {
     pcb *proc;
     int level;
@@ -98,6 +102,9 @@ static void multi_level_scheduler() {
     }
 }
 
+/* Every proces that uses the cpu for longer then time slice will be place to 
+ * in the back of the queue. 
+ */
 static void round_robin() {
     pcb *proc, *ready_tail;
 
