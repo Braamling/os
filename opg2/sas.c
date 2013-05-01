@@ -84,9 +84,6 @@ static void schedule_to_back() {
         level = pcb_get_queue_level(proc) + 1;
         pcb_move_to_level(proc, level);
 
-        if (ready_proc)
-            printf(", new: %ld", ready_proc->proc_num);
-
         set_slice(SLICE);
     }
 }
@@ -148,7 +145,6 @@ void schedule(event_type event) {
             schedule_to_back();
             break;
         case IO_event:
-            CPU_scheduler();
             break;
         case Ready_event:
             break;
@@ -156,7 +152,6 @@ void schedule(event_type event) {
             finished_event ++;
             ReclaimMemory();
             GiveMemory();
-            CPU_scheduler();
             break;
         default:
             printf("I cannot handle event nr. %d\n", event);
