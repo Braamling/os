@@ -29,6 +29,7 @@
 typedef enum EVENT {NewProcess_event, Time_event, Ready_event, IO_event,
         Finish_event} event_type;
 
+
 /****************************************************************************
     de structuur "pcb" bevat alle informatie die voor de scheduler
     beschikbaar is.
@@ -148,3 +149,4 @@ function *reset_stats;
 ****************************************************************************e */
 
 void   schedule(event_type event);
+

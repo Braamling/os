@@ -7,14 +7,25 @@
 
 #include "schedule.h"
 #include "pcb_control.h"
-#include "mem_alloc.h"
 #include "sas.h"
+#include "mem_alloc.h"
 #include "multilevel.h"
 
 int give_mem = 0, new_event = 0, finished_event = 0;
+double slice;
+scheduler_type scheduler;
 
 /* This variable will simulate the allocatable memory. */
 static long memory[MEM_SIZE];
+
+static void CPU_scheduler(){
+    if(scheduler == ROUND_ROBIN)
+        round_robin();
+    else
+        multi_level_scheduler();
+
+}
+
 
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
@@ -42,7 +53,7 @@ static void GiveMemory() {
 
     pcb_place_in_ready_queue(proc);
 
-    set_slice(SLICE);
+    set_slice(slice);
 
     give_mem ++;
 }
@@ -72,11 +83,10 @@ static void ReclaimMemory() {
     }
 }
 
-static void schedule_to_back() {
+static void multi_level_scheduler() {
     pcb *proc;
     int level;
 
-    // printf("yay!\n");
 
     proc = ready_proc;
 
@@ -88,12 +98,31 @@ static void schedule_to_back() {
         level = pcb_get_queue_level(proc) + 1;
         pcb_move_to_level(proc, level);
 
-        // if (!ready_proc)
-        //     ready_proc = proc;
-        // else {
-        //     ready_tail = pcb_find_tail(ready_proc);
-        //     ready_proc = pcb_insert_after(proc, ready_tail);
-        // }
+        printf("timeout: %ld", proc->proc_num);
+
+        if (ready_proc)
+            printf(", new: %ld", ready_proc->proc_num);
+
+        printf(".\n");
+
+        set_slice(slice);
+    }
+}
+
+static void round_robin() {
+    pcb *proc, *ready_tail;
+
+    proc = ready_proc;
+
+    if (proc) {
+        ready_proc = pcb_remove(proc);
+
+        if (!ready_proc)
+            ready_proc = proc;
+        else {
+            ready_tail = pcb_find_tail(ready_proc);
+            ready_proc = pcb_insert_after(proc, ready_tail);
+        }
 
         printf("timeout: %ld", proc->proc_num);
 
@@ -102,54 +131,34 @@ static void schedule_to_back() {
 
         printf(".\n");
 
-        set_slice(SLICE);
+        set_slice(slice);
     }
 }
 
-/* OLD */
-// static void schedule_to_back() {
-//     pcb *proc, *ready_tail;
-
-//     // printf("yay!\n");
-
-//     proc = ready_proc;
-
-//     if (proc) {
-//         ready_proc = pcb_remove(proc);
-
-//         if (!ready_proc)
-//             ready_proc = proc;
-//         else {
-//             ready_tail = pcb_find_tail(ready_proc);
-//             ready_proc = pcb_insert_after(proc, ready_tail);
-//         }
-
-//         printf("timeout: %ld", proc->proc_num);
-
-//         if (ready_proc)
-//             printf(", new: %ld", ready_proc->proc_num);
-
-//         printf(".\n");
-
-//         set_slice(SLICE);
-//     }
-// }
-
-/* You may want to have the last word... */
 static void my_finale() {
-    
+    /* Your very own code goes here */
 }
 
 /* The main scheduling routine. */
 void schedule(event_type event) {
     static int first = 1;
+    int type;
 
     if (first) {
         mem_init(memory);
         finale = my_finale;
         first = 0;
 
-        /* Add your own initialisation code here. */
+        printf("Chose a scheduler type [0-round robin/1-multi/default]:");
+        scanf("\n %d", &type);
+        if (type == 0){
+            scheduler = ROUND_ROBIN;
+        }else{
+            scheduler = MULTI_LEVEL;
+        }
+
+        printf("Chose time slide:");
+        scanf("\n %lf", &slice);
     }
 
     switch (event) {
@@ -160,7 +169,7 @@ void schedule(event_type event) {
             GiveMemory();
             break;
         case Time_event:
-            schedule_to_back();
+            CPU_scheduler();
             break;
         case IO_event:
             CPU_scheduler();
