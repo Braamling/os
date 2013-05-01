@@ -82,6 +82,8 @@ static void multi_level_scheduler() {
 
     proc = ready_proc;
 
+    /* When a new proc is pulled from the ready_proc, it will be removed
+     * from the ready proc and placed in the correct queue level. */
     if (proc) {
         ready_proc = pcb_remove(proc);
 
