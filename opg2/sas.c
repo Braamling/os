@@ -73,9 +73,9 @@ static void ReclaimMemory() {
     }
 }
 
-/* Every proces that uses the cpu for longer then time slice will be place to 
+/* Every proces that uses the cpu for longer than time slice will be place to 
  * in a higher level queue. Only when all the lower queues are empty the higher
- * queue will get cpu time. */
+ * queues will get cpu time. */
 static void multi_level_scheduler() {
     pcb *proc;
     int level;
@@ -92,6 +92,8 @@ static void multi_level_scheduler() {
     }
 }
 
+/* Every proces that uses the cpu for longer than time slice, will be placed in
+ * the back of the queue. This way shorter processes will finish first. */
 static void round_robin_scheduler() {
     pcb *proc, *ready_tail;
 
@@ -100,6 +102,7 @@ static void round_robin_scheduler() {
     if (proc) {
         ready_proc = pcb_remove(proc);
 
+        /* Move to the back of the queue. */
         if (!ready_proc)
             ready_proc = proc;
         else {
@@ -111,6 +114,7 @@ static void round_robin_scheduler() {
     }
 }
 
+/* The time slice has finished, time to check what needs to be done. */
 static void CPU_scheduler(){
     if (scheduler == ROUND_ROBIN)
         round_robin_scheduler();
@@ -127,6 +131,7 @@ void schedule(event_type event) {
     static int first = 1;
     int type;
 
+    /* Initialize the scheduler. */
     if (first) {
         mem_init(memory);
         finale = my_finale;
@@ -151,9 +156,8 @@ void schedule(event_type event) {
         printf("Gekozen waarde: %lf.\n", slice);
     }
 
+    /* An event has occured. Check which did, and proces the event. */
     switch (event) {
-
-        /* You may want to do this differently. */
         case NewProcess_event:
             new_event ++;
             GiveMemory();
