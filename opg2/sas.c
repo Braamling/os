@@ -16,12 +16,6 @@ int give_mem = 0, new_event = 0, finished_event = 0;
 /* This variable will simulate the allocatable memory. */
 static long memory[MEM_SIZE];
 
-/* The actual CPU scheduler is implemented here. */
-static void CPU_scheduler() {
-
-    /* Insert the code for a MLFbQ scheduler here. */
-}
-
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
     long mem_need, assigned_mem_base;
@@ -47,12 +41,6 @@ static void GiveMemory() {
     new_proc = pcb_remove(proc);
 
     pcb_place_in_ready_queue(proc);
-    // ready_tail = pcb_find_tail(ready_proc);
-
-    // if (!ready_tail)
-    //     ready_proc = proc;
-    // else
-    //     ready_proc = pcb_insert_after(proc, ready_tail);
 
     set_slice(SLICE);
 
