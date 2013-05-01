@@ -18,15 +18,6 @@ scheduler_type scheduler;
 /* This variable will simulate the allocatable memory. */
 static long memory[MEM_SIZE];
 
-static void CPU_scheduler(){
-    if(scheduler == ROUND_ROBIN)
-        round_robin();
-    else
-        multi_level_scheduler();
-
-}
-
-
 /* The high-level memory allocation scheduler is implemented here. */
 static void GiveMemory() {
     long mem_need, assigned_mem_base;
@@ -98,7 +89,7 @@ static void multi_level_scheduler() {
     }
 }
 
-static void round_robin() {
+static void round_robin_scheduler() {
     pcb *proc, *ready_tail;
 
     proc = ready_proc;
@@ -113,15 +104,15 @@ static void round_robin() {
             ready_proc = pcb_insert_after(proc, ready_tail);
         }
 
-        printf("timeout: %ld", proc->proc_num);
-
-        if (ready_proc)
-            printf(", new: %ld", ready_proc->proc_num);
-
-        printf(".\n");
-
         set_slice(slice);
     }
+}
+
+static void CPU_scheduler(){
+    if (scheduler == ROUND_ROBIN)
+        round_robin_scheduler();
+    else if (scheduler == MULTI_LEVEL)
+        multi_level_scheduler();
 }
 
 static void my_finale() {
@@ -138,16 +129,23 @@ void schedule(event_type event) {
         finale = my_finale;
         first = 0;
 
-        printf("Chose a scheduler type [0-round robin/1-multi/default]:");
-        scanf("\n %d", &type);
-        if (type == 0){
+        printf("Kies een scheduler [0: Round Robin / 1: Multilevel Feedback");
+        printf(" Queue]: ");
+        scanf("%d", &type);
+
+        if (type == 0) {
+            printf("Round Robin gekozen.\n");
             scheduler = ROUND_ROBIN;
-        }else{
+        }
+        else {
+            printf("Multilevel Feedback Queue gekozen.\n");
             scheduler = MULTI_LEVEL;
         }
 
-        printf("Chose time slide:");
-        scanf("\n %lf", &slice);
+        printf("Kies een time slice: ");
+        scanf("%lf", &slice);
+
+        printf("Gekozen waarde: %lf.\n", slice);
     }
 
     switch (event) {
