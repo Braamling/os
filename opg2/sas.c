@@ -47,41 +47,24 @@ static void GiveMemory() {
     give_mem ++;
 }
 
-/* Clear the memory of a process. */
-static void clear_mem(pcb *proc) {
-    long mem_base;
-
-    if (!proc)
-        return;
-
-    mem_base = pcb_get_mem_base(proc);
-    if (mem_base >= 0) {
-        mem_free(mem_base);
-        pcb_set_mem_base(proc, -1);
-    }
-}
-
-/* Cleanup a process. */
-static void cleanup_process(pcb *proc) {
-    if (!proc)
-        return;
-
-    clear_mem(proc);
-
-    if (proc->your_admin)
-        pcb_admin_destroy(proc->your_admin);
-
-    rm_process(&proc);
-}
-
 /* Here we reclaim the memory of a process after it has finished. */
 static void ReclaimMemory() {
     pcb *proc;
+    long mem_base;
 
     proc = defunct_proc;
 
     while (proc) {
-        cleanup_process(proc);
+        mem_base = pcb_get_mem_base(proc);
+        if (mem_base >= 0) {
+            mem_free(mem_base);
+            pcb_set_mem_base(proc, -1);
+        }
+
+        if (proc->your_admin)
+            pcb_admin_destroy(proc->your_admin);
+
+        rm_process(&proc);
 
         defunct_proc = pcb_remove(proc);
         proc = defunct_proc;
@@ -133,18 +116,8 @@ static void schedule_to_back() {
 //     }
 // }
 
-/* Clean up all unfinished procs. */
 static void my_finale() {
-    pcb *proc;
-
-    proc = ready_proc;
-
-    while (proc) {
-        clear_mem(proc);
-
-        ready_proc = pcb_remove(proc);
-        proc = ready_proc;
-    }
+    
 }
 
 /* The main scheduling routine. */
