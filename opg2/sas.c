@@ -74,7 +74,7 @@ static void ReclaimMemory() {
         }
 
         if (proc->your_admin) {
-            free(proc->your_admin);
+            pcb_admin_destroy(proc->your_admin);
         }
 
         rm_process(&proc);
@@ -88,31 +88,16 @@ static void schedule_to_back() {
     pcb *proc;
     int level;
 
-    // printf("yay!\n");
-
     proc = ready_proc;
 
     if (proc) {
-        printf("proc: %ld\n", proc->proc_num);
-
         ready_proc = pcb_remove(proc);
 
         level = pcb_get_queue_level(proc) + 1;
         pcb_move_to_level(proc, level);
 
-        // if (!ready_proc)
-        //     ready_proc = proc;
-        // else {
-        //     ready_tail = pcb_find_tail(ready_proc);
-        //     ready_proc = pcb_insert_after(proc, ready_tail);
-        // }
-
-        printf("timeout: %ld", proc->proc_num);
-
         if (ready_proc)
             printf(", new: %ld", ready_proc->proc_num);
-
-        printf(".\n");
 
         set_slice(SLICE);
     }

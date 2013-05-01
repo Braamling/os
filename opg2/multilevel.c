@@ -9,6 +9,41 @@
 #include "pcb_control.h"
 #include "multilevel.h"
 
+/* Initialize a pcb admin.
+ *
+ * Arguments:
+ * -pcb_admin **admin: Pointer to the pointer to the struct.
+ *
+ * Results:
+ * -Succes: 0.
+ * -Failure: -1. */
+int pcb_admin_init(pcb_admin **admin) {
+	*admin = malloc(sizeof(pcb_admin));
+
+	if (*admin) {
+		(*admin)->queue_level = 0;
+		return 0;
+	}
+
+	return -1;
+}
+
+/* Destroy a pcb admin from memory.
+ *
+ * Arguments:
+ * -pcb_admin *admin: Pointer to the struct.
+ *
+ * Results:
+ * -Succes: 0.
+ * -Failure: -1. */
+int pcb_admin_destroy(pcb_admin *admin) {
+	if (!admin)
+		return -1;
+
+	free(admin);
+	return 0;
+}
+
 /* Find the tail of a level in the ready queue.
  * 
  * Arguments:
@@ -16,7 +51,7 @@
  * 
  * Results:
  * -Succes: A pointer to the last pcb in the queue.
- * -Fail: NULL. */
+ * -Failure: NULL. */
 pcb *pcb_find_level_tail(int level) {
 	pcb *item;
 
@@ -41,7 +76,7 @@ pcb *pcb_find_level_tail(int level) {
  * 
  * Results:
  * -Succes: 0.
- * -Fail: -1. */
+ * -Failure: -1. */
 int pcb_move_to_level(pcb *item, int level) {
 	pcb* level_tail;
 
@@ -81,7 +116,7 @@ int pcb_move_to_level(pcb *item, int level) {
  * 
  * Results:
  * -Succes: 0.
- * -Fail: -1. */
+ * -Failure: -1. */
 int pcb_increase_level(pcb *item) {
 	if (!item)
 		return -1;
@@ -98,14 +133,14 @@ int pcb_increase_level(pcb *item) {
  * 
  * Results:
  * -Succes: 0.
- * -Fail: -1. */
+ * -Failure: -1. */
 int pcb_place_in_ready_queue(pcb *item) {
 	pcb_admin *admin;
 
 	if (!item)
 		return -1;
 
-	admin = malloc(sizeof(pcb_admin));
+	pcb_admin_init(&admin);
 	item->your_admin = admin;
 
 	return pcb_move_to_level(item, 1);
@@ -118,7 +153,7 @@ int pcb_place_in_ready_queue(pcb *item) {
  * 
  * Results:
  * -Succes: 0.
- * -Fail: -1. */
+ * -Failure: -1. */
 int pcb_set_queue_level(pcb *item, int level) {
 	if (!item)
 		return -1;
@@ -135,11 +170,10 @@ int pcb_set_queue_level(pcb *item, int level) {
  * 
  * Results:
  * -Succes: The queue level of the item.
- * -Fail: -1. */
+ * -Failure: -1. */
 int pcb_get_queue_level(pcb *item) {
 	if (!item)
 		return -1;
 
 	return ((pcb_admin *)item->your_admin)->queue_level;
 }
-
