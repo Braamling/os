@@ -1,21 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
+#include "address.h"
 #include "mem_alloc.h"
 
 static long *memory;
 
 void mem_init(long mem[MEM_SIZE]) {
-	long i;
-	
-	memory = mem;
-
-	for (i = 0; i < MEM_SIZE; i ++) {
-		memory[i] = 0;
-	}
-
-	memory[4] = 18;
+	long index = 230;
+	int used = 0;
+	printf("index: %ld, used: %d, address: %ld.\n",
+			index, used, address_set(index, used));
+	exit(0);
 }
 
 long mem_get(long request) {
