@@ -13,3 +13,7 @@ long mem_gap_size(long index);
 /* Find the index of the first gap in memory. Returns -1 if no gap can be
  * found. */
 long mem_find_first_gap(long index);
+
+/* Find the index of the end of a block. Returns -1 if a block start if found
+ * before a block end. */
+long mem_seek_block_end(long index);

@@ -110,7 +110,6 @@ void schedule(event_type event)
         /* Add your own initialisation code here
          */
     }
-
     switch (event)
     {
     /* You may want to do this differently
