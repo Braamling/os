@@ -7,6 +7,8 @@
  * Versie: 0.01 */
 
 #define MEM_SIZE (32768)
+#define MEM_BLOCK_START 1
+#define MEM_BLOCK_END -1
 
 /* mem_init wordt aangeroepen voor enige andere procedure uit deze file wordt
  * gebruikt. Hij initialseert de memory-manager en zorgt ervoor dat het te
@@ -17,7 +19,7 @@ void mem_init(long mem[MEM_SIZE]);
  * mogelijk en geeft de index van het eerste element van dat stuk geheugen
  * terug. Indien de aanvraag niet gehonoreerd kan worden, wordt -1
  * teruggegeven. */
-long  mem_get(long request);
+long mem_get(long request);
 
 /* mem_free wordt aangeroepen om een eerder verkregen stuk geheugen op locatie
  * index weer vrij te geven. Index moet een geldige waarde hebben. */
