@@ -10,9 +10,11 @@ static long *memory;
 
 void mem_init(long mem[MEM_SIZE]) {
 	long index = 230;
-	int used = 0;
+	int used = 1;
+	long address = address_set(index, used);
 	printf("index: %ld, used: %d, address: %ld.\n",
-			index, used, address_set(index, used));
+			index, used, address);
+	printf("used is: %d.\n", address_is_used(address));
 	exit(0);
 }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include "address.h"
 
@@ -16,4 +17,15 @@ long address_set(long index, int used) {
 	address = index | used_mask;
 
 	return address;
+}
+
+int address_is_used(long address) {
+
+	/* Turn off all irrelevant bits. */
+	address = address & (long)pow(2, 31);
+
+	/* Move the bit the the 1st place. */
+	address = address >> 31;
+
+	return (int)address;
 }
