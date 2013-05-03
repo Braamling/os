@@ -7,7 +7,7 @@
 static long *memory;
 
 void mem_init(long mem[MEM_SIZE]) {
-	int i;
+	long i;
 	
 	memory = mem;
 
