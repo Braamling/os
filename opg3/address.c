@@ -43,3 +43,35 @@ long get_index(long address) {
 	return (long)index;
 }
 
+int get_block_size(long *mem, long index) {
+	if (!mem) {
+		return -1;
+	}
+
+	if (index < 0) {
+		return -1;
+	}
+
+	return mem[index];
+}
+
+int insert_address(long* mem, long index) {
+	if (!mem) {
+		return -1;
+	}
+
+	if (mem[ADDR_MAX_INDEX] <= mem[ADDR_COUNT_INDEX]) {
+		return -1;
+	}
+
+	if (mem[ADDR_MAX_INDEX] < index) {
+		return -1;
+	}
+
+
+
+	return 0;
+}
+
+
+
