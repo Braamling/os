@@ -70,14 +70,16 @@ long get_address_end(long *mem) {
 }
 
 int move_addresses_right(long *mem, long addr_index) {
-	long addr_end, i;
+	long addr_count, last_addr, i;
 
-	addr_end = get_address_end(mem);
 
-	if (addr_end == (get_address_max(mem) + ADDR_START))
+	addr_count = get_address_count(mem);
+	last_addr = addr_count + ADDR_START;
+
+	if (last_addr >= (get_address_max(mem) + ADDR_START))
 		return -1;
 
-	for (i = addr_end; i >= addr_index; i --)
+	for (i = last_addr; i > addr_index; i --)
 		mem[i + 1] = mem[i];
 
 	mem[i] = -1;
@@ -204,7 +206,7 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 	gap_addr = mem[gap_addr_index];
 	gap_index = get_index(gap_addr);
 
-	if (!address_is_used(gap_addr))
+	if (address_is_used(gap_addr))
 		return -1;
 
 	gap_size = get_block_size(mem, gap_index);
@@ -243,6 +245,8 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 	/* Update the gap's address. */
 	mem[gap_addr_index + 1] = address_set(gap_index, 0);
 
+	mem[ADDR_COUNT_INDEX] ++;
+
 	return 0;
 }
 
@@ -250,7 +254,7 @@ int get_block_size(long *mem, long block_index) {
 	if(!in_block_space(mem, block_index))
 		return -1;
 
-	return mem[block_index+1];
+	return mem[block_index + 1];
 }
 
 int set_block_size(long *mem, long block_index, long size){
