@@ -250,7 +250,7 @@ int get_block_size(long *mem, long block_index) {
 	if(!in_block_space(mem, block_index))
 		return -1;
 
-	return mem[block_index+1];
+	return mem[block_index + 1];
 }
 
 int set_block_size(long *mem, long block_index, long size){
