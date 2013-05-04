@@ -37,9 +37,10 @@ long mem_get(long request) {
 
 	while(1) {
 		if(!address_is_used(memory[addr_index])) {
-			if((block_index = get_index(memory[addr_index])) != -1){
+			if((block_index = get_index(memory[addr_index])) != -1) {
 				block_size = get_block_size(memory, block_index);
-				if(block_size >= request){
+
+				if(block_size >= request) {
 					alloc_mem(memory, addr_index, request);
 					return block_index + 2;
 				}
@@ -47,14 +48,16 @@ long mem_get(long request) {
 		}
 
 		if(!(in_addr_space(memory, addr_index ++))){
-			return -1;
+			exit(EXIT_FAILURE);
 		}
+
 	}
 	return -1;
 }
 
 void mem_free(long index) {
 	long addr_index;
+
 
 	addr_index = memory[index - 2];
 
