@@ -9,3 +9,4 @@ long get_free_address_slot(long *mem);
 long get_address_max(long *mem);
 long get_address_count(long *mem);
 long get_address_end(long *mem);
+int get_block_size(long *mem, long index);

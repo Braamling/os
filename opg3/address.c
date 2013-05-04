@@ -72,3 +72,31 @@ long get_address_end(long *mem) {
 int move_addresses_right(long *mem, long index) {
 	return 0;
 }
+
+int get_block_size(long *mem, long index) {
+	if (!mem) {
+		return -1;
+	}
+
+	if (index < 0) {
+		return -1;
+	}
+
+	return mem[index];
+}
+
+int insert_address(long* mem, long index) {
+	if (!mem) {
+		return -1;
+	}
+
+	if (mem[ADDR_MAX_INDEX] <= mem[ADDR_COUNT_INDEX]) {
+		return -1;
+	}
+
+	if (mem[ADDR_MAX_INDEX] < index) {
+		return -1;
+	}
+
+	return 0;
+}
