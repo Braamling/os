@@ -15,3 +15,7 @@
 *.exe
 *.out
 *.app
+
+# Manual files
+opg2/sas
+opg3/next-fit
