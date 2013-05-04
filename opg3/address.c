@@ -116,14 +116,14 @@ int insert_address(long* mem, long addr_index, long address) {
 	return 0;
 }
 
-int in_addr_space(long *mem, long addr_index){
-	if (get_address_max(mem) < addr_index || addr_index <= ADDR_COUNT_INDEX)
+int in_addr_space(long *mem, long addr_index) {
+	if (get_address_max(mem) < addr_index || addr_index < ADDR_START)
 		return 0;
 	else
 		return 1;
 }
 
-int in_block_space(long *mem, long block_index){
+int in_block_space(long *mem, long block_index) {
 	if ((get_address_end(mem) < block_index) && (block_index < MEM_SIZE))
 		return 1;
 	else
@@ -131,16 +131,13 @@ int in_block_space(long *mem, long block_index){
 }
 
 int remove_address(long *mem, long addr_index) {
-	printf("a");
 	if (!in_addr_space(mem, addr_index))
 		return -1;	
 
-	printf("b");
 	mem[addr_index] = -1;
 
 	if (move_addresses_left(mem, addr_index) == -1)
 		return -1;
-	printf("c");
 
 	mem[ADDR_COUNT_INDEX] --;
 
@@ -156,6 +153,7 @@ int free_mem(long *mem, long addr_index) {
 	mem[addr_index] = address_set_used(mem[addr_index], 0);
 
 	block_index = get_index(mem[addr_index]);
+	printf("block: %ld", block_index);
 
 	/* Merge the block after the to be free'ed memory */
 	if (in_addr_space(mem, addr_index + 1)) {
@@ -166,22 +164,28 @@ int free_mem(long *mem, long addr_index) {
 				return -1;
 
 			temp_block_index = get_index(mem[addr_index + 1]);
+			printf(", after %ld", temp_block_index);
 
-			if (temp_block_index == -1) 
-				return -1;
+			if (temp_block_index != -1)  {
 
-			temp_size = get_block_size(mem, temp_block_index);
+				temp_size = get_block_size(mem, temp_block_index);
 
-			if (temp_size == -1)
-				return -1;
+				if (temp_size == -1) {
+					printf("b");
+					return -1;
+				}
 
-			new_size = temp_size + old_size;
+				new_size = temp_size + old_size + 2;
 
-			set_block_size(mem, block_index, new_size);
+				printf(", size: %ld", new_size);
 
-			remove_address(mem, addr_index + 1);
+				set_block_size(mem, block_index, new_size);
+
+				remove_address(mem, addr_index + 1);
+			}
 		}
 	}
+
 
 	/* Merge the block before the to be free'ed memory */
 	if(in_addr_space(mem,addr_index - 1)) {
@@ -193,22 +197,25 @@ int free_mem(long *mem, long addr_index) {
 				return -1;
 
 			block_index = get_index(mem[addr_index - 1]);
+			printf(", before %ld", block_index);
 
-			if (block_index == -1) 
-				return -1;
+			if (block_index != -1) {
 
-			temp_size = get_block_size(mem, block_index);
+				temp_size = get_block_size(mem, block_index);
 
-			if (temp_size == -1)
-				return -1;
+				if (temp_size == -1)
+					return -1;
 
-			new_size = temp_size + old_size;
+				new_size = temp_size + old_size + 2;
+				printf(", size: %ld", new_size);
 
-			set_block_size(mem, block_index, new_size);
+				set_block_size(mem, block_index, new_size);
 
-			remove_address(mem, mem[addr_index]);
+				remove_address(mem, mem[addr_index]);
+			}
 		}
 	}
+	printf("\n");
 
 	return 0;
 }
@@ -227,10 +234,10 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 	if (gap_size == -1)
 		return -1;
 
-	if (gap_size < request)
+	if (gap_size < (request + 2))
 		return -1;
 
-	if (gap_size == request) {
+	if (gap_size == (request + 2)) {
 		mem[gap_addr_index] = address_set_used(gap_addr, 1);
 		return 0;
 	}
@@ -264,8 +271,9 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 }
 
 int get_block_size(long *mem, long block_index) {
-	if(!in_block_space(mem, block_index))
+	if (!in_block_space(mem, block_index)) {
 		return -1;
+	}
 
 	return mem[block_index + 1];
 }
