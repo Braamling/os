@@ -272,14 +272,21 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 }
 
 int get_block_size(long *mem, long block_index) {
-	if (!in_block_space(mem, block_index)) {
+	long addr_index, index_diff;
+
+	if (!in_block_space(mem, block_index))
 		return -1;
-	}
+
+	addr_index = mem[block_index];
+
+	index_diff = get_index(mem[addr_index]) - get_index(mem[addr_index + 1]);
+	if (index_diff == 1)
+		return 0;
 
 	return mem[block_index + 1];
 }
 
-int set_block_size(long *mem, long block_index, long size){
+int set_block_size(long *mem, long block_index, long size) {
 	if (!in_block_space(mem, block_index))
 		return -1;
 
