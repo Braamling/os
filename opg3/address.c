@@ -70,6 +70,32 @@ long get_address_end(long *mem) {
 }
 
 int move_addresses_right(long *mem, long index) {
+	long addr_end, i;
+
+	addr_end = get_address_end(mem);
+
+	if (addr_end == (get_address_max(mem) + ADDR_START))
+		return -1;
+
+	for (i = addr_end; i >= index; i --)
+		mem[i + 1] = mem[i];
+
+	mem[i] = -1;
+
+	return 0;
+}
+
+int move_addresses_left(long *mem, long index) {
+	long addr_end, i;
+
+	addr_end = get_address_end(mem);
+
+	if (mem[index] != -1)
+		return -1;
+
+	for (i = (index + 1); i <= addr_end; i ++)
+		mem[i - 1] = mem[i];
+
 	return 0;
 }
 
