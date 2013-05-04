@@ -12,9 +12,11 @@ void mem_init(long mem[MEM_SIZE]) {
 	long index = 230;
 	int used = 1;
 	long address = address_set(index, used);
+	memory = mem;
 	printf("index: %ld, used: %d, address: %ld.\n",
 			index, used, address);
 	printf("used is: %d.\n", address_is_used(address));
+	printf("index is: %ld. \n", get_index(address));
 	exit(0);
 }
 
@@ -24,13 +26,13 @@ long mem_get(long request) {
 }
 
 void mem_free(long index) {
-	printf("test");
+
 }
 
 void mem_available(long *empty, long *large, long *n_holes) {
-	printf("test");
+	
 }
 
 void mem_exit() {
-	printf("test");
+
 }

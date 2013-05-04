@@ -100,7 +100,7 @@ int move_addresses_left(long *mem, long index) {
 }
 
 int get_block_size(long *mem, long index) {
-	if (!mem)
+	if (index >= MEM_SIZE)
 		return -1;
 
 	if (index < 0)
@@ -110,18 +110,37 @@ int get_block_size(long *mem, long index) {
 }
 
 int insert_address(long* mem, long index, long address) {
-	if (!mem)
+	/* No address can be written outside the address space */
+	if (get_address_max(mem) <= get_address_count(mem))
 		return -1;
 
-	if (mem[ADDR_MAX_INDEX] <= mem[ADDR_COUNT_INDEX])
+	if (!in_addr_space(mem, index))
 		return -1;
 
-	if (mem[ADDR_MAX_INDEX] < index)
+	if (move_addresses_right(mem, index) == -1)
 		return -1;
-
-	move_addresses_right(mem, index);
 
 	mem[index] = address;
+
+	return 0;
+}
+
+int in_addr_space(long *mem, long index){
+	if (get_address_max(mem) < index || index <= ADDR_COUNT_INDEX)
+		return 0;
+	else
+		return 1;
+}
+
+int remove_address(long* mem, long index) {
+	/* No address can be written outside the address space */
+	if (!in_addr_space(mem, index))
+		return -1;	
+
+	mem[index] = -1;
+
+	if (move_addresses_left(mem, index) == -1)
+		return -1;
 
 	return 0;
 }

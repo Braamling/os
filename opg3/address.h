@@ -12,3 +12,4 @@ long get_address_count(long *mem);
 long get_address_end(long *mem);
 int get_block_size(long *mem, long index);
 int move_addresses_right(long *mem, long index);
+int in_addr_space(long *mem, long index);
