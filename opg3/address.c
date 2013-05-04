@@ -167,12 +167,14 @@ int free_mem(long *mem, long addr_index) {
 			if (temp_block_index == -1) 
 				return -1;
 
-			old_size = get_block_size(mem, block_index);
+			old_size = get_block_size(mem, temp_block_index);
 
 			if (old_size == -1)
 				return -1;
 
-			new_size = temp_size + old_size + 2;
+			new_size = temp_size + old_size;
+
+			printf("merge forward temp_size: %ld, %ld \n", temp_size, old_size);
 
 			set_block_size(mem, block_index, new_size);
 
@@ -201,7 +203,7 @@ int free_mem(long *mem, long addr_index) {
 				return -1;
 
 
-			new_size = temp_size + old_size + 2;
+			new_size = temp_size + old_size;
 
 			set_block_size(mem, block_index, new_size);
 
