@@ -44,31 +44,28 @@ long get_index(long address) {
 }
 
 int get_block_size(long *mem, long index) {
-	if (!mem) {
+	if (!mem)
 		return -1;
-	}
 
-	if (index < 0) {
+	if (index < 0)
 		return -1;
-	}
 
 	return mem[index];
 }
 
-int insert_address(long* mem, long index) {
-	if (!mem) {
+int insert_address(long* mem, long index, long address) {
+	if (!mem)
 		return -1;
-	}
 
-	if (mem[ADDR_MAX_INDEX] <= mem[ADDR_COUNT_INDEX]) {
+	if (mem[ADDR_MAX_INDEX] <= mem[ADDR_COUNT_INDEX])
 		return -1;
-	}
 
-	if (mem[ADDR_MAX_INDEX] < index) {
+	if (mem[ADDR_MAX_INDEX] < index)
 		return -1;
-	}
 
+	move_right(index);
 
+	mem[index] = address;
 
 	return 0;
 }

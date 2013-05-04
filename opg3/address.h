@@ -9,3 +9,4 @@ int address_is_used(long address);
 long get_index(long address);
 
 int get_block_size(long *mem, long index);
+int insert_address(long* mem, long index, long address) {
