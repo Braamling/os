@@ -29,3 +29,13 @@ int address_is_used(long address) {
 
 	return (int)address;
 }
+
+int get_index(long address) {
+	int index;
+
+	/* Turn of the used bit. */
+	index = address - (address & (long)pow(2, 31));
+
+	return (int)index;
+}
+
