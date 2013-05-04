@@ -131,13 +131,16 @@ int in_block_space(long *mem, long block_index){
 }
 
 int remove_address(long *mem, long addr_index) {
+	printf("a");
 	if (!in_addr_space(mem, addr_index))
 		return -1;	
 
+	printf("b");
 	mem[addr_index] = -1;
 
 	if (move_addresses_left(mem, addr_index) == -1)
 		return -1;
+	printf("c");
 
 	mem[ADDR_COUNT_INDEX] --;
 
@@ -176,7 +179,7 @@ int free_mem(long *mem, long addr_index) {
 
 			set_block_size(mem, block_index, new_size);
 
-			remove_address(mem, mem[addr_index + 1]);
+			remove_address(mem, addr_index + 1);
 		}
 	}
 
