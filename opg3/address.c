@@ -99,8 +99,7 @@ int move_addresses_left(long *mem, long index) {
 	return 0;
 }
 
-
-int insert_address(long *mem, long index, long address) {
+int insert_address(long* mem, long index, long address) {
 	if (get_address_max(mem) <= get_address_count(mem))
 		return -1;
 
@@ -189,6 +188,53 @@ int free_mem(long *mem, long addr_index){
 		remove_address(mem, mem[addr_index]);
 	}
 
+	return 0;
+}
+
+int alloc_mem(long *mem, long gap_addr_index, long request) {
+	long gap_addr, gap_size, gap_index, block_addr;
+
+	gap_addr = mem[gap_addr_index];
+	gap_index = get_index(gap_addr);
+
+	if (!address_is_used(gap_addr))
+		return -1;
+
+	gap_size = get_block_size(mem, gap_index);
+
+	if (gap_size == -1)
+		return -1;
+
+	if (gap_size < request)
+		return -1;
+
+	if (gap_size == request) {
+		mem[gap_addr_index] = address_set_used(gap_addr, 1);
+		return 0;
+	}
+
+	/* Save the new size of the gap, for later. */
+	gap_size -= (request + 2);
+
+	block_addr = address_set(gap_index, 1);
+
+	/* Insert the new block at the index of the gap. */
+	if (insert_address(mem, gap_addr_index, block_addr) == -1)
+		return -1;
+
+	/* Set the size and address index of the new block. */
+	mem[gap_index] = gap_addr_index;
+	mem[gap_index + 1] = request;
+
+	/* Set the size and address index of the moved gap. */
+	gap_index += request + 2;
+	if (set_block_size(mem, gap_index, gap_size) == -1)
+		return -1;
+	mem[gap_index] = gap_addr_index + 1;
+	mem[gap_index + 1] = gap_size;
+
+	/* Update the gap's address. */
+	mem[gap_addr_index + 1] = address_set(gap_index, 0);
 
 	return 0;
 }
@@ -200,7 +246,6 @@ int get_block_size(long *mem, long block_index) {
 	return mem[block_index+1];
 }
 
-
 int set_block_size(long *mem, long block_index, long size){
 	if(!in_block_space(mem, block_index))
 		return -1;
@@ -209,3 +254,14 @@ int set_block_size(long *mem, long block_index, long size){
 	return 0;
 }
 
+long address_set_used(long addr, int used) {
+	long used_bit, mask;
+
+	used_bit = (long)(used << 31);
+
+	mask = (long)pow(2, 31) - 1;
+
+	mask = mask | used_bit;
+
+	return (addr & mask);
+}

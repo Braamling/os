@@ -16,3 +16,6 @@ int in_addr_space(long *mem, long index);
 int in_block_space(long *mem, long index);
 int set_block_size(long *mem, long block_index, long size);
 int remove_address(long *mem, long index);
+int alloc_mem(long *mem, long gap_addr, long request);
+long address_set_used(long index, int used);
+int set_block_size(long *mem, long block_index, long size);
