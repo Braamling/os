@@ -124,7 +124,7 @@ int in_addr_space(long *mem, long addr_index) {
 }
 
 int in_block_space(long *mem, long block_index) {
-	if ((get_address_end(mem) < block_index) && (block_index < MEM_SIZE))
+	if ((get_address_end(mem) < block_index) && (block_index < (MEM_SIZE - 3)))
 		return 1;
 	else
 		return 0;
@@ -145,7 +145,7 @@ int remove_address(long *mem, long addr_index) {
 }
 
 int free_mem(long *mem, long addr_index) {
-	long block_index, temp_block_index, temp_size, new_size, old_size;
+	long block_index, temp_block_index, temp_size, new_size, old_size, mem_adm;
 
 	if (!address_is_used(mem[addr_index]))
 		return -1;
@@ -176,7 +176,12 @@ int free_mem(long *mem, long addr_index) {
 					return -1;
 				}
 
-				new_size = temp_size + old_size + 2;
+				if (temp_size == 0)
+					mem_adm = 1;
+				else
+					mem_adm = 2;
+
+				new_size = temp_size + old_size + mem_adm;
 
 				printf(", size: %ld", new_size);
 
@@ -207,7 +212,13 @@ int free_mem(long *mem, long addr_index) {
 				if (temp_size == -1)
 					return -1;
 
-				new_size = temp_size + old_size + 2;
+				if (temp_size == 0)
+					mem_adm = 1;
+				else
+					mem_adm = 2;
+
+
+				new_size = temp_size + old_size + mem_adm;
 				printf(", size: %ld", new_size);
 
 				set_block_size(mem, block_index, new_size);
@@ -272,9 +283,17 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 }
 
 int get_block_size(long *mem, long block_index) {
+	long addr_index, index_diff;
+
 	if (!in_block_space(mem, block_index)) {
 		return -1;
 	}
+
+	addr_index = mem[block_index];
+
+	index_diff = get_index(mem[addr_index]) - get_index(mem[addr_index + 1]);
+	if (index_diff == 1)
+		return 0;
 
 	return mem[block_index + 1];
 }
