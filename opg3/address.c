@@ -31,12 +31,15 @@ int address_is_used(long address) {
 }
 
 /* Get the index of an address. Give the address as a long. */ 
-int get_index(long address) {
-	int index;
+long get_index(long address) {
+	long index, mask;
 
-	/* Turn off the 'used' bit. */
-	index = address - (address & (long)pow(2, 31));
+	/* Create a mask for the 'used' it */
+	mask = (long)pow(2, 31)-1;
 
-	return (int)index;
+	/* Mask the 'used' bit. */
+	index = address & mask;
+
+	return (long)index;
 }
 
