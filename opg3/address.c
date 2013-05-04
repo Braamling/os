@@ -66,7 +66,7 @@ long get_address_count(long *mem) {
 }
 
 long get_address_end(long *mem) {
-	return get_address_count(mem) + ADDR_START;
+	return get_address_max(mem) + ADDR_START;
 }
 
 int move_addresses_right(long *mem, long addr_index) {
@@ -122,7 +122,7 @@ int in_addr_space(long *mem, long addr_index){
 }
 
 int in_block_space(long *mem, long block_index){
-	if (get_address_max(mem) < block_index || block_index > MEM_SIZE)
+	if ((get_address_end(mem) < block_index) && (block_index < MEM_SIZE))
 		return 1;
 	else
 		return 0;
@@ -254,7 +254,7 @@ int get_block_size(long *mem, long block_index) {
 }
 
 int set_block_size(long *mem, long block_index, long size){
-	if(!in_block_space(mem, block_index))
+	if (!in_block_space(mem, block_index))
 		return -1;
 
 	mem[block_index + 1] = size;
