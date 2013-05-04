@@ -115,14 +115,14 @@ int insert_address(long* mem, long addr_index, long address) {
 }
 
 int in_addr_space(long *mem, long addr_index){
-	if (get_address_max(mem) < addr_index || index <= ADDR_COUNT_INDEX)
+	if (get_address_max(mem) < addr_index || addr_index <= ADDR_COUNT_INDEX)
 		return 0;
 	else
 		return 1;
 }
 
 int in_block_space(long *mem, long block_index){
-	if (get_address_max(mem) < block_index || index > MEM_SIZE)
+	if (get_address_max(mem) < block_index || block_index > MEM_SIZE)
 		return 1;
 	else
 		return 0;
@@ -146,7 +146,7 @@ int free_mem(long *mem, long addr_index){
 	if(!address_is_used(mem[addr_index]))
 		return -1;
 
-	address_set_used(addr_indeblock_x, 0);
+	address_set_used(addr_index, 0);
 
 	block_index = get_index(mem[addr_index]);
 
