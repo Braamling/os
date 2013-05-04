@@ -9,19 +9,29 @@
 static long *memory;
 
 void mem_init(long mem[MEM_SIZE]) {
-	long index = 230;
-	int used = 1;
-	long address = address_set(index, used);
+	long addr_end, gap_index, gap_size, i;
+
 	memory = mem;
-	printf("index: %ld, used: %d, address: %ld.\n",
-			index, used, address);
-	printf("used is: %d.\n", address_is_used(address));
-	printf("index is: %ld. \n", get_index(address));
-	exit(0);
+
+	memory[ADDR_MAX_INDEX] = ADDR_START + ADDR_SPACE;
+	memory[ADDR_COUNT_INDEX] = 1;
+
+	addr_end = get_address_end(memory);
+
+	gap_index = addr_end + 1;
+	gap_size = MEM_SIZE - gap_index;
+
+	memory[ADDR_START] = address_set(gap_index, 0);
+	if (set_block_size(memory, gap_index, gap_size) == -1)
+		exit(EXIT_FAILURE);
+
+	memory[gap_index] = ADDR_START;
+
+	for (i = (ADDR_START + 1); i <= addr_end; i ++)
+		memory[i] = -1;
 }
 
 long mem_get(long request) {
-	printf("Mem 4: %ld.\n", memory[4]);
 	return -1;
 }
 
