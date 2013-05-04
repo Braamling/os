@@ -13,7 +13,7 @@ void mem_init(long mem[MEM_SIZE]) {
 
 	memory = mem;
 
-	memory[ADDR_MAX_INDEX] = ADDR_START + ADDR_SPACE;
+	memory[ADDR_MAX_INDEX] = ADDR_SPACE;
 	memory[ADDR_COUNT_INDEX] = 1;
 
 	addr_end = get_address_end(memory);
@@ -68,11 +68,13 @@ void mem_free(long index) {
 		return;
 
 	free_mem(memory, addr_index);
-	/*printf("free %ld\n", get_address_count(memory));*/
+	printf("free %ld\n", index);
 }
 
 void mem_available(long *empty, long *large, long *n_holes) {
 	long addr_count, i, addr, index, size;
+
+	printf("---------------\n");
 
 	addr_count = get_address_count(memory);
 
@@ -84,6 +86,8 @@ void mem_available(long *empty, long *large, long *n_holes) {
 		addr = memory[i + ADDR_START];
 		index = get_index(addr);
 		size = get_block_size(memory, index);
+
+		printf("%ld, %ld, %ld\n", addr, index, size);
 
 		if (!address_is_used(addr)) {
 			*empty += size + 2;
