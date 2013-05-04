@@ -45,14 +45,13 @@ long mem_get(long request) {
 				block_size = get_block_size(memory, block_index);
 				if (block_size >= request) {
 					alloc_mem(memory, addr_index, request);
-					/*printf("get %ld\n", get_address_count(memory));*/
 					return block_index + 2;
 				}
 			}
 		}
 
 		addr_index ++;
-		if (!in_addr_space(memory, addr_index))
+		if (!in_addr_space(memory, (addr_index + 1)))
 			return -1;
 
 	}
@@ -68,7 +67,6 @@ void mem_free(long index) {
 		return;
 
 	free_mem(memory, addr_index);
-	printf("free %ld\n", index);
 }
 
 void mem_available(long *empty, long *large, long *n_holes) {
@@ -96,6 +94,8 @@ void mem_available(long *empty, long *large, long *n_holes) {
 				*large = size;
 		}
 	}
+
+	printf("---------------\n");
 }
 
 void mem_exit() {
