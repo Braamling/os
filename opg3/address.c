@@ -99,18 +99,8 @@ int move_addresses_left(long *mem, long index) {
 	return 0;
 }
 
-int get_block_size(long *mem, long index) {
-	if (index >= MEM_SIZE)
-		return -1;
 
-	if (index < 0)
-		return -1;
-
-	return mem[index];
-}
-
-int insert_address(long* mem, long index, long address) {
-	/* No address can be written outside the address space */
+int insert_address(long *mem, long index, long address) {
 	if (get_address_max(mem) <= get_address_count(mem))
 		return -1;
 
@@ -132,8 +122,14 @@ int in_addr_space(long *mem, long index){
 		return 1;
 }
 
-int remove_address(long* mem, long index) {
-	/* No address can be written outside the address space */
+int in_block_space(long *mem, long index){
+	if (get_address_max(mem) < index || index > MEM_SIZE)
+		return 1;
+	else
+		return 0;
+}
+
+int remove_address(long *mem, long index) {
 	if (!in_addr_space(mem, index))
 		return -1;	
 
@@ -144,3 +140,72 @@ int remove_address(long* mem, long index) {
 
 	return 0;
 }
+
+int free_mem(long *mem, long addr_index){
+	long block_index, temp_block_index, temp_size, new_size;
+
+	if(!address_is_used(mem[addr_index]))
+		return -1;
+
+	block_index = get_index(mem[addr_index]);
+
+	/* Merge the block after the to be free'ed memory */
+	if(!address_is_used(mem[addr_index + 1])){
+
+		temp_size = get_block_size(mem, block_index);
+
+		if (temp_size == -1)
+			return -1;
+
+		temp_block_index = get_index(mem[addr_index + 1]);
+
+		if (temp_block_index == -1) 
+			return -1;
+
+		new_size = temp_size + get_block_size(mem, temp_block_index);
+
+		set_block_size(mem, block_index, new_size);
+
+		remove_address(mem, mem[addr_index + 1]);
+	}
+
+	/* Merge the block before the to be free'ed memory */
+	if(!address_is_used(mem[addr_index - 1])){
+
+		temp_size = get_block_size(mem, block_index);
+
+		if (temp_size == -1)
+			return -1;
+
+		block_index = get_index(mem[addr_index - 1]);
+
+		if (block_index == -1) 
+			return -1;
+
+		new_size = temp_size + get_block_size(mem, block_index);
+
+		set_block_size(mem, block_index, new_size);
+
+		remove_address(mem, mem[addr_index]);
+	}
+
+
+	return 0;
+}
+
+int get_block_size(long *mem, long block_index) {
+	if(!in_block_space(mem, block_index))
+		return -1;
+
+	return mem[block_index+1];
+}
+
+
+int set_block_size(long *mem, long block_index, long size){
+	if(!in_block_space(mem, block_index))
+		return -1;
+
+	mem[block_index + 1] = size;
+	return 0;
+}
+
