@@ -4,7 +4,7 @@
 #include "mem_alloc.h"
 #include "address.h"
 
-long address_set(long index, int used) {
+long address_set(long block_index, int used) {
 	long used_mask;
 	long address;
 
@@ -15,7 +15,7 @@ long address_set(long index, int used) {
 	used_mask = used_mask << 31;
 	
 	/* Combine the used mask with the memory index. */
-	address = index | used_mask;
+	address = block_index | used_mask;
 
 	return address;
 }
@@ -69,7 +69,7 @@ long get_address_end(long *mem) {
 	return get_address_count(mem) + ADDR_START;
 }
 
-int move_addresses_right(long *mem, long index) {
+int move_addresses_right(long *mem, long addr_index) {
 	long addr_end, i;
 
 	addr_end = get_address_end(mem);
@@ -77,7 +77,7 @@ int move_addresses_right(long *mem, long index) {
 	if (addr_end == (get_address_max(mem) + ADDR_START))
 		return -1;
 
-	for (i = addr_end; i >= index; i --)
+	for (i = addr_end; i >= addr_index; i --)
 		mem[i + 1] = mem[i];
 
 	mem[i] = -1;
@@ -85,56 +85,56 @@ int move_addresses_right(long *mem, long index) {
 	return 0;
 }
 
-int move_addresses_left(long *mem, long index) {
+int move_addresses_left(long *mem, long addr_index) {
 	long addr_end, i;
 
 	addr_end = get_address_end(mem);
 
-	if (mem[index] != -1)
+	if (mem[addr_index] != -1)
 		return -1;
 
-	for (i = (index + 1); i <= addr_end; i ++)
+	for (i = (addr_index + 1); i <= addr_end; i ++)
 		mem[i - 1] = mem[i];
 
 	return 0;
 }
 
-int insert_address(long* mem, long index, long address) {
+int insert_address(long* mem, long addr_index, long address) {
 	if (get_address_max(mem) <= get_address_count(mem))
 		return -1;
 
-	if (!in_addr_space(mem, index))
+	if (!in_addr_space(mem, addr_index))
 		return -1;
 
-	if (move_addresses_right(mem, index) == -1)
+	if (move_addresses_right(mem, addr_index) == -1)
 		return -1;
 
-	mem[index] = address;
+	mem[addr_index] = address;
 
 	return 0;
 }
 
-int in_addr_space(long *mem, long index){
-	if (get_address_max(mem) < index || index <= ADDR_COUNT_INDEX)
+int in_addr_space(long *mem, long addr_index){
+	if (get_address_max(mem) < addr_index || index <= ADDR_COUNT_INDEX)
 		return 0;
 	else
 		return 1;
 }
 
-int in_block_space(long *mem, long index){
-	if (get_address_max(mem) < index || index > MEM_SIZE)
+int in_block_space(long *mem, long block_index){
+	if (get_address_max(mem) < block_index || index > MEM_SIZE)
 		return 1;
 	else
 		return 0;
 }
 
-int remove_address(long *mem, long index) {
-	if (!in_addr_space(mem, index))
+int remove_address(long *mem, long addr_index) {
+	if (!in_addr_space(mem, addr_index))
 		return -1;	
 
-	mem[index] = -1;
+	mem[addr_index] = -1;
 
-	if (move_addresses_left(mem, index) == -1)
+	if (move_addresses_left(mem, addr_index) == -1)
 		return -1;
 
 	return 0;
@@ -145,6 +145,8 @@ int free_mem(long *mem, long addr_index){
 
 	if(!address_is_used(mem[addr_index]))
 		return -1;
+
+	address_set_used(addr_indeblock_x, 0);
 
 	block_index = get_index(mem[addr_index]);
 
@@ -254,7 +256,7 @@ int set_block_size(long *mem, long block_index, long size){
 	return 0;
 }
 
-long address_set_used(long addr, int used) {
+long address_set_used(long address, int used) {
 	long used_bit, mask;
 
 	used_bit = (long)(used << 31);
@@ -263,5 +265,5 @@ long address_set_used(long addr, int used) {
 
 	mask = mask | used_bit;
 
-	return (addr & mask);
+	return (address & mask);
 }
