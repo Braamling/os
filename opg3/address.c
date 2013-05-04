@@ -30,10 +30,11 @@ int address_is_used(long address) {
 	return (int)address;
 }
 
+/* Get the index of an address. Give the address as a long. */ 
 int get_index(long address) {
 	int index;
 
-	/* Turn of the used bit. */
+	/* Turn off the 'used' bit. */
 	index = address - (address & (long)pow(2, 31));
 
 	return (int)index;
