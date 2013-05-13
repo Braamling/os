@@ -124,7 +124,7 @@ int in_addr_space(long *mem, long addr_index) {
 }
 
 int in_block_space(long *mem, long block_index) {
-	if ((get_address_end(mem) < block_index) && (block_index < (MEM_SIZE - 3)))
+	if ((get_address_end(mem) < block_index) && (block_index < MEM_SIZE))
 		return 1;
 	else
 		return 0;
@@ -145,7 +145,7 @@ int remove_address(long *mem, long addr_index) {
 }
 
 int free_mem(long *mem, long addr_index) {
-	long block_index, temp_block_index, temp_size, new_size, old_size, mem_adm;
+	long block_index, temp_block_index, temp_size, new_size, old_size;
 
 	if (!in_addr_space(mem, addr_index))
 		return -1;
@@ -175,12 +175,7 @@ int free_mem(long *mem, long addr_index) {
 				if (temp_size == -1)
 					return -1;
 
-				if (temp_size == 0)
-					mem_adm = 1;
-				else
-					mem_adm = 2;
-
-				new_size = temp_size + old_size + mem_adm;
+				new_size = temp_size + old_size + 2;
 
 				set_block_size(mem, block_index, new_size);
 
@@ -293,17 +288,8 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 }
 
 int get_block_size(long *mem, long block_index) {
-	long addr_index, index_diff;
-
-	if (!in_block_space(mem, block_index))
+	if (!in_block_space(mem, block_index)) {
 		return -1;
-
-	addr_index = mem[block_index];
-/*	printf("gbz: %ld %ld\n", addr_index, mem[addr_index]);
-*/
-	index_diff = get_index(mem[addr_index]) - get_index(mem[addr_index + 1]);
-	if (index_diff == 1)
-		return 0;
 
 	return mem[block_index + 1];
 }
