@@ -1,4 +1,6 @@
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "admin.h"
 #include "mem_alloc.h"
@@ -64,7 +66,7 @@ long get_block_size(long *mem, long block_index) {
 }
 
 long merge_block(long *mem, long first_index, long second_index) {
-	if (first_index < second_index)
+	if (first_index >= second_index)
 		return -1;
 
 	if (!in_block_space(mem, first_index))
@@ -80,15 +82,17 @@ long merge_block(long *mem, long first_index, long second_index) {
 	return 0;
 }
 
-long free_block(long *mem, long block_admin_index) {
-	int index, next_index;
+int free_block(long *mem, long block_admin_index) {
+	int index, next_index, count;
 
 	if (!in_block_space(mem, block_admin_index))
 		return -1;
 
-	mem[block_admin_index] = admin_make(block_admin_index, 0);
+	next_index = admin_get_next_index(mem[block_admin_index]);
+	mem[block_admin_index] = admin_make(next_index, 0);
 
 	index = FIRST_INDEX;
+	count = 0;
 
 	while (index) {
 		next_index = admin_get_next_index(mem[index]);
@@ -97,13 +101,19 @@ long free_block(long *mem, long block_admin_index) {
 
 			if (next_index != 0) {
 				if (!admin_get_used(mem[next_index])) {
-					merge_block(mem, index, next_index);
-					next_index = admin_get_next_index(mem[index]);
+					if(merge_block(mem, index, next_index) == -1){
+						return -1;
+					}
+					next_index = index;
 				}
 			}
 		}
 
 		index = next_index;
+		count++;
+
+		if(count >= MEM_SIZE)
+			index = 0;
 	}
 
 	return 0;

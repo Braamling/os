@@ -7,15 +7,16 @@ long fit(long *mem, long request){
 
 	admin_index = FIRST_INDEX;
 
-	while(1){
+	while (1) {
 		size = get_block_size(mem, admin_index);
-		if (size >= request){
+
+		if (!admin_get_used(mem[admin_index]) && (size >= request)) {
 			return admin_index;
 		}
 
 		admin_index = admin_get_next_index(mem[admin_index]);
 
-		if(admin_index == 0){
+		if (admin_index == 0) {
 			return -1;
 		}
 	}
