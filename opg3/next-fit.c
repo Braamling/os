@@ -61,7 +61,6 @@ long mem_get(long request) {
 void mem_free(long index) {
 	long addr_index;
 
-
 	addr_index = memory[index - 2];
 	if (!in_addr_space(memory, addr_index))
 		return;

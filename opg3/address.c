@@ -227,11 +227,7 @@ int free_mem(long *mem, long addr_index) {
 }
 
 int alloc_mem(long *mem, long gap_addr_index, long request) {
-	long gap_addr, gap_size, gap_index, block_addr, a, b, c;
-
-	printf("alloc %ld %ld", gap_addr_index, request);
-	if (request == 127)
-		mem_available(&a, &b, &c);
+	long gap_addr, gap_size, gap_index, block_addr;
 
 	gap_addr = mem[gap_addr_index];
 	gap_index = get_index(gap_addr);
@@ -254,7 +250,6 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 
 	/* Save the new size of the gap, for later. */
 	gap_size -= (request + 2);
-	printf(", new: %ld.\n", gap_size);
 
 	block_addr = address_set(gap_index, 1);
 
@@ -262,10 +257,6 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 	if (insert_address(mem, gap_addr_index, block_addr) == -1)
 		return -1;
 
-	if (request == 127) {
-		printf("after insert");
-		mem_available(&a, &b, &c);
-	}
 
 	/* Set the size and address index of the new block. */
 	mem[gap_index] = gap_addr_index;
@@ -286,9 +277,6 @@ int alloc_mem(long *mem, long gap_addr_index, long request) {
 
 	mem[ADDR_COUNT_INDEX] ++;
 
-	if (request == 127)
-		mem_available(&a, &b, &c);
-
 	return 0;
 }
 
@@ -299,11 +287,11 @@ int get_block_size(long *mem, long block_index) {
 		return -1;
 
 	addr_index = mem[block_index];
-/*	printf("gbz: %ld %ld\n", addr_index, mem[addr_index]);
-*/
-	index_diff = get_index(mem[addr_index]) - get_index(mem[addr_index + 1]);
-	if (index_diff == 1)
-		return 0;
+
+	index_diff = get_index(mem[addr_index + 1]) - get_index(mem[addr_index]);
+
+	if (index_diff <= 3)
+		return index_diff;
 
 	return mem[block_index + 1];
 }
