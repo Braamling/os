@@ -19,6 +19,8 @@ void mem_init(long mem[MEM_SIZE]) {
 long mem_get(long request) {
 	long available_admin_index;
 
+	printf("a%ld\n", request);
+
 	available_admin_index = fit(memory, request);
 	if (available_admin_index == -1)
 		return -1;
@@ -31,6 +33,8 @@ long mem_get(long request) {
 
 void mem_free(long index) {
 	long admin_index;
+
+	printf("f%ld\n", index);
 
 	admin_index = index - 1;
 
