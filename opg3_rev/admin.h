@@ -1,4 +1,5 @@
 #define FIRST_INDEX 1
+#define ADMIN_SIZE 1
 
 long admin_make(long next_index, int used);
 int admin_get_used(long admin);
