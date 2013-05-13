@@ -5,6 +5,7 @@
 #include "fit.h"
 
 static long *memory;
+long a, b, c;
 
 void mem_init(long mem[MEM_SIZE]) {
 	memory = mem;
@@ -32,6 +33,9 @@ long mem_get(long request) {
 void mem_free(long index) {
 	long admin_index;
 
+	if (index == 2)
+		mem_available(&a, &b, &c);
+
 	admin_index = index - 1;
 
 	free_block(memory, admin_index);
@@ -46,8 +50,8 @@ void mem_available(long *empty, long *large, long *n_holes) {
 
 	index = FIRST_INDEX;
 
-	printf("=======\n");
-	printf("i\tni\tbs\tu\n");
+	/*printf("=======\n");
+	printf("i\tni\tbs\tu\n");*/
 
 	while (index) {
 		block_size = get_block_size(memory, index);
@@ -62,14 +66,14 @@ void mem_available(long *empty, long *large, long *n_holes) {
 			*n_holes = *n_holes + 1;
 		}
 
-		printf("%ld\t%ld\t%ld\t%d\n", index, next_index, block_size,
-			admin_get_used(memory[index]));
+		/*printf("%ld\t%ld\t%ld\t%d\n", index, next_index, block_size,
+			admin_get_used(memory[index]));*/
 
 		index = next_index;
 
 	}
 
-	printf("=======\n");
+	/*printf("=======\n");*/
 }
 
 void mem_exit() {

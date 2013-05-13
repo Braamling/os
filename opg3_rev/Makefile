@@ -10,5 +10,11 @@ next-fit: next_fit.o mem_alloc.o admin.o mem_test2-64.o
 best-fit: best_fit.o mem_alloc.o admin.o mem_test2-64.o
 	$(CC) $^ $(CFLAGS) -o $@
 
-next: next-fit
+clean:
+	rm -f {admin,mem_alloc,next_fit}.o
+
+next: clean next-fit
 	./next-fit
+
+best: clean best-fit
+	./best-fit
