@@ -112,3 +112,26 @@ long free_block(long *mem, long block_admin_index) {
 int get_block_count(long *mem) {
 	return mem[0];
 }
+
+int alloc_block(long *mem, long gap_admin_index, long size) {
+	long old_gap_size, gap_next_index, block_next_index,
+			block_admin_index;
+
+	if (admin_get_used(mem[gap_admin_index]))
+		return -1;
+
+	old_gap_size = get_block_size(mem, gap_admin_index);
+	if (old_gap_size < size)
+		return -1;
+
+	gap_next_index = admin_get_next_index(mem[gap_admin_index]);
+	block_next_index = gap_admin_index + size + 1;
+
+	block_admin_index = gap_admin_index;
+	gap_admin_index = block_next_index;
+
+	mem[block_admin_index] = admin_make(block_next_index, 1);
+	mem[gap_admin_index] = admin_make(gap_next_index, 0);
+
+	return 0;
+}
