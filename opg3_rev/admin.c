@@ -62,3 +62,7 @@ long get_block_size(long *mem, long block_index) {
 
 	return size;
 }
+
+int get_block_count(long *mem) {
+	return mem[0];
+}
