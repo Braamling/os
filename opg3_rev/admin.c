@@ -99,7 +99,7 @@ int free_block(long *mem, long block_admin_index) {
 			if (next_index != 0) {
 				if (!admin_get_used(mem[next_index])) {
 					merge_block(mem, index, next_index);
-					next_index = admin_get_next_index(mem[index]);
+					next_index = index;
 				}
 			}
 		}
