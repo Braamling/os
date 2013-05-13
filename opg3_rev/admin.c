@@ -63,7 +63,6 @@ long get_block_size(long *mem, long block_index) {
 	return size;
 }
 
-<<<<<<< HEAD
 long merge_block(long *mem, long first_index, long second_index) {
 	if (first_index < second_index)
 		return -1;
@@ -104,8 +103,7 @@ long free_block(long *mem, long block_index) {
 
 	return 0;
 }
-=======
+
 int get_block_count(long *mem) {
 	return mem[0];
 }
->>>>>>> 8ae1e04e673e8ebb982e5a026e651e7ad1e97587
