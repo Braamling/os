@@ -75,6 +75,8 @@ long merge_block(long *mem, long first_index, long second_index) {
 
 	mem[first_index] = mem[second_index];
 
+	mem[0] --;
+
 	return 0;
 }
 

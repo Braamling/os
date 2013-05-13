@@ -1,1 +1,1 @@
-long fit();
+long fit();long fit(long *mem, long request);
