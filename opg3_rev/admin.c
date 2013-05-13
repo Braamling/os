@@ -4,6 +4,8 @@
 #include "admin.h"
 #include "mem_alloc.h"
 
+long a, b, c;
+
 long admin_make(long next_index, int used) {
 	long used_mask, admin;
 
@@ -83,7 +85,6 @@ long merge_block(long *mem, long first_index, long second_index) {
 
 int free_block(long *mem, long block_admin_index) {
 	long index, next_index;
-	long a, b, c;
 
 	if (!in_block_space(mem, block_admin_index))
 		return -1;
@@ -137,8 +138,12 @@ int alloc_block(long *mem, long gap_admin_index, long size) {
 	block_admin_index = gap_admin_index;
 	gap_admin_index = block_next_index;
 
+	if (old_gap_size != size)
+		mem[gap_admin_index] = admin_make(gap_next_index, 0);
+	else if (gap_next_index == 0)
+		block_next_index = 0;
+
 	mem[block_admin_index] = admin_make(block_next_index, 1);
-	mem[gap_admin_index] = admin_make(gap_next_index, 0);
 
 	return 0;
 }

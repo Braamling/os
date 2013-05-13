@@ -7,7 +7,6 @@
  * Versie: 0.01 */
 
 #define MEM_SIZE (32768)
-/*#define MEM_SIZE (300)*/
 
 /* mem_init wordt aangeroepen voor enige andere procedure uit deze file wordt
  * gebruikt. Hij initialseert de memory-manager en zorgt ervoor dat het te
