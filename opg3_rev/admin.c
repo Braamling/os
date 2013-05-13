@@ -38,7 +38,7 @@ long admin_get_next_index(long admin) {
 }
 
 int in_block_space(long *mem, long block_index) {
-	if ((1 < block_index) && (block_index < MEM_SIZE))
+	if ((1 <= block_index) && (block_index < MEM_SIZE))
 		return 1;
 	else
 		return 0;
@@ -61,4 +61,45 @@ long get_block_size(long *mem, long block_index) {
 	}
 
 	return size;
+}
+
+long merge_block(long *mem, long first_index, long second_index) {
+	if (first_index < second_index)
+		return -1;
+
+	if (!in_block_space(mem, first_index))
+		return -1;
+
+	if (!in_block_space(mem, second_index))
+		return -1;
+
+	mem[first_index] = mem[second_index];
+
+	return 0;
+}
+
+long free_block(long *mem, long block_index) {
+	int index, next_index;
+
+	if (!in_block_space(mem, block_index))
+		return -1;
+
+	mem[block_index] = admin_make(block_index, 0);
+
+	index = 1;
+
+	while (index) {
+		next_index = admin_get_next_index(mem[index]);
+
+		if (next_index != 0) {
+			if (!admin_get_used(mem[next_index]) && 
+					!admin_get_used(mem[index])) {
+				merge_block(mem, index, next_index);
+			}
+
+			index = next_index;
+		}
+	}
+
+	return 0;
 }
