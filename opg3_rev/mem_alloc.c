@@ -1,5 +1,4 @@
 /* File: mem_alloc.c
- *
  * Authors: Bas van den Heuvel & Bram van den Akker
  *
  * This file contains all functions used by the memory simulator. It uses

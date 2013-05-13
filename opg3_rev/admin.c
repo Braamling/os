@@ -1,11 +1,12 @@
-/* Authors: Bas van den Heuvel, Bram van den Akker.
+/* File: admin.c
+ * Authors: Bas van den Heuvel & Bram van den Akker.
  * 
- * This file contains all the functions for administrating the memory.
- * 
- * All functions are used in both the next-fit as best-fit algoritmes.
- * 
- */
-
+ * This file contains all the functions for administrating a virtual memory.
+ * The memory works like a linked list. Every part of memory, gap or used
+ * block, starts with a pointer to the next block. The pointer also contains a
+ * bit that indicates whether the block is a gap or if it is used. The last
+ * block has no pointer to a next block, but uses a 0 to indicate it is the
+ * last block. */
 
 #include <math.h>
 #include <stdio.h>
@@ -14,19 +15,20 @@
 #include "admin.h"
 #include "mem_alloc.h"
 
-/* Create an admin for a block with either an used or unused bit.
+/* Create an admin integer for a block, with a pointer to the next block and a
+ * `used` indicator.
  *
  * Arguments:
- * -long block_index: The block index where the admin points to.
- * -int used: A 1 when a block is in use and a 0 when a block is not used.
+ * -long next_index: The index of the next block (0 when the relevant block is
+ *  the last block in memory).
+ * -int used: 1 when a block is in use and 0 when a block is not used.
  *
  * Results:
- * -Success: The created admin.
- * -Failure: n/a. */
+ * -The created admin integer. */
 long admin_make(long next_index, int used) {
 	long used_mask, admin;
 
-	/* Destroy unwanted bits from the 'used' int and Move the 'used' bit to
+	/* Destroy unwanted bits from the 'used' int and move the 'used' bit to
 	 * the 31st place. */
 	used_mask = (used & 1) << 31;
 
@@ -36,14 +38,13 @@ long admin_make(long next_index, int used) {
 	return admin;
 }
 
-/* Find if an admin block is used.
+/* Check if a block is used by looking at its admin integer.
  *
  * Arguments:
- * -long admin: The admin with next block index and 'used' bit.
+ * -long admin: The admin integer of the block.
  *
  * Results:
- * -Success: An integer with a 1 when used and 0 when not used.
- * -Failure: n/a. */
+ * -1 when used and 0 when not used. */
 int admin_get_used(long admin) {
 	int used;
 
@@ -53,14 +54,13 @@ int admin_get_used(long admin) {
 	return used;
 }
 
-/* Find the next admin block index.
+/* Find the index of the next block after another by its admin integer.
  *
  * Arguments:
- * -long admin: The admin with next block index and 'used' bit.
+ * -long admin: The admin integer of the block.
  *
  * Results:
- * -Success: The index of the next admin block.
- * -Failure: n/a. */
+ * -The index of the next admin block. */
 long admin_get_next_index(long admin) {
 	long mask, next_index;
 
@@ -73,11 +73,11 @@ long admin_get_next_index(long admin) {
 	return next_index;
 }
 
-/* Find if an block is in the block space.
+/* Find whether a block is in the block space.
  *
  * Arguments:
  * -long *mem: The memory array.
- * -long block_index: The block_index that has to be checked.
+ * -long block_index: The index of the block of which the size is checked.
  *
  * Results:
  * -Success: 0 if it's not in the block space and 1 if it's in the block space.
@@ -106,6 +106,9 @@ long get_block_size(long *mem, long block_index) {
 
 	next_index = admin_get_next_index(mem[block_index]);
 
+	/* For the last block, calculate the block size by looking at its index and
+	 * the total size of the memory. For any other block, calculate it by
+	 * looking at its index and the index of the block following it. */
 	if (next_index == 0) {
 		size = MEM_SIZE - block_index - ADMIN_SIZE;
 	}
@@ -116,17 +119,17 @@ long get_block_size(long *mem, long block_index) {
 	return size;
 }
 
-/* Merge 2 blocks of empty memory together. 
+/* Merge two empty blocks together.
  *
  * Arguments:
  * -long *mem: The memory array.
- * -long first_index: The index of the block in the memory.
- * -long second_index: The index of the second block in the memory
+ * -long first_index: The index of the first block.
+ * -long second_index: The index of the second block.
  *
  * Results:
  * -Success: 0.
  * -Failure: -1. */
-long merge_block(long *mem, long first_index, long second_index) {
+int merge_block(long *mem, long first_index, long second_index) {
 	if (first_index >= second_index)
 		return -1;
 
@@ -136,6 +139,7 @@ long merge_block(long *mem, long first_index, long second_index) {
 	if (!in_block_space(mem, second_index))
 		return -1;
 
+	/* Copying the second block's pointer is enough. */
 	mem[first_index] = mem[second_index];
 
 	mem[0] --;
@@ -143,11 +147,11 @@ long merge_block(long *mem, long first_index, long second_index) {
 	return 0;
 }
 
-/* Free the memory and make sure all administration is done correctly.
+/* Free memory and merge double gaps.
  *
  * Arguments:
  * -long *mem: The memory array.
- * -long addr_index: The index of the address that has to be freeëd.
+ * -long addr_index: The index of the address that has to be freed.
  *
  * Results:
  * -Success: 0.
@@ -184,32 +188,30 @@ int free_block(long *mem, long block_admin_index) {
 	return 0;
 }
 
-/* Find the amount of block.
+/* Find the amount of blocks.
  *
  * Arguments:
  * -long *mem: The memory array.
  *
  * Results:
- * -Success: The amount of blocks.
- * -Failure: n/a. */
+ * -The amount of blocks. */
 int get_block_count(long *mem) {
 	return mem[0];
 }
 
-/* Allocate the memory needed for a block.
+/* Allocate a block in memory.
  *
  * Arguments:
  * -long *mem: The memory array.
- * -long gap_addr_index: The index of the gap address that has to be used 
- *  for the alloc.
- * -long request: The size of the momory request.
+ * -long gap_addr_index: The index of the admin integer of the gap that has to
+ *  be used for the alloc.
+ * -long size: The size of the memory request.
  *
  * Results:
  * -Success: 0.
  * -Failure: -1. */
 int alloc_block(long *mem, long gap_admin_index, long size) {
-	long old_gap_size, gap_next_index, block_next_index,
-			block_admin_index;
+	long old_gap_size, gap_next_index, block_next_index, block_admin_index;
 
 	if (admin_get_used(mem[gap_admin_index]))
 		return -1;
@@ -219,11 +221,17 @@ int alloc_block(long *mem, long gap_admin_index, long size) {
 		return -1;
 
 	gap_next_index = admin_get_next_index(mem[gap_admin_index]);
+
+	/* The block will point to the remainder of the gap. */
 	block_next_index = gap_admin_index + size + 1;
 
 	block_admin_index = gap_admin_index;
 	gap_admin_index = block_next_index;
 
+	/* If the old gap was of inequal length to the size of the to be allocated
+	 * block, the gap will have a new admin integer. Otherwise, there is no
+	 * gap left. If the gap was the last block in memory, the block will be the
+	 * new last block. */
 	if (old_gap_size != size)
 		mem[gap_admin_index] = admin_make(gap_next_index, 0);
 	else if (gap_next_index == 0)
