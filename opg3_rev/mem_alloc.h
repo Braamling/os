@@ -6,8 +6,7 @@
  * Datum: 5 oktober 1993
  * Versie: 0.01 */
 
-#define MEM_SIZE (32768)
-#define ADDR_SPACE 256
+#define MEM_SIZE (300) /* 32768 */
 
 /* mem_init wordt aangeroepen voor enige andere procedure uit deze file wordt
  * gebruikt. Hij initialseert de memory-manager en zorgt ervoor dat het te
