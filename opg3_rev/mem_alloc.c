@@ -78,4 +78,7 @@ void mem_available(long *empty, long *large, long *n_holes) {
 
 void mem_exit() {
 
+	/* clear all memory */
+	memory[0] = 1;
+	memory[1] = admin_make(0, 0);
 }
