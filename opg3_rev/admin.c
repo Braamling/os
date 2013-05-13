@@ -80,27 +80,30 @@ long merge_block(long *mem, long first_index, long second_index) {
 	return 0;
 }
 
-long free_block(long *mem, long block_index) {
+long free_block(long *mem, long block_admin_index) {
 	int index, next_index;
 
-	if (!in_block_space(mem, block_index))
+	if (!in_block_space(mem, block_admin_index))
 		return -1;
 
-	mem[block_index] = admin_make(block_index, 0);
+	mem[block_admin_index] = admin_make(block_admin_index, 0);
 
-	index = 1;
+	index = FIRST_INDEX;
 
 	while (index) {
 		next_index = admin_get_next_index(mem[index]);
 
-		if (next_index != 0) {
-			if (!admin_get_used(mem[next_index]) && 
-					!admin_get_used(mem[index])) {
-				merge_block(mem, index, next_index);
-			}
+		if (!admin_get_used(mem[index])){
 
-			index = next_index;
+			if (next_index != 0) {
+				if (!admin_get_used(mem[next_index])) {
+					merge_block(mem, index, next_index);
+					next_index = admin_get_next_index(mem[index]);
+				}
+			}
 		}
+
+		index = next_index;
 	}
 
 	return 0;
