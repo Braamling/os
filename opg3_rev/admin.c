@@ -80,7 +80,7 @@ long merge_block(long *mem, long first_index, long second_index) {
 	return 0;
 }
 
-long free_block(long *mem, long block_admin_index) {
+int free_block(long *mem, long block_admin_index) {
 	int index, next_index;
 
 	if (!in_block_space(mem, block_admin_index))
