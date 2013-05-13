@@ -17,13 +17,11 @@ void mem_init(long mem[MEM_SIZE]) {
 }
 
 long mem_get(long request) {
-	long available_admin_index, a, b, c;
+	long available_admin_index;
 
 	available_admin_index = fit(memory, request);
 	if (available_admin_index == -1)
 		return -1;
-
-	mem_available(&a, &b, &c);
 
 	if (alloc_block(memory, available_admin_index, request) == -1)
 		return -1;

@@ -9,9 +9,8 @@ long fit(long *mem, long request){
 
 	while (1) {
 		size = get_block_size(mem, admin_index);
-		if (size >= request) {
-			if (alloc_block(mem, admin_index, request) == -1)
-				return -1;
+
+		if (!admin_get_used(mem[admin_index]) && (size >= request)) {
 			return admin_index;
 		}
 

@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 
 #include "admin.h"
 #include "mem_alloc.h"
