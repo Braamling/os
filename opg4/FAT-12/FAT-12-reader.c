@@ -145,49 +145,42 @@ void printDirEntry(dirEntry * e) {
 int get_file_name(dirEntry * e, char *name_holder) {
 		int i, j;
 		j = 0;
-		if (e->attrib == 0x0f)
-		{
-				printf("LFN:");
-				for (i = 1; i < 32; i++)
-				{
-						if (e->name[i] >= ' ') printf("%c", e->name[i]);
-						else if (e->name[i]) printf("&%x;", e->name[i]);
-				}
-				printf("\n");
-		} else
-		{
-				for (i = 0; i < 8; i++)
-				{
-						if (e->name[i] < ' ')
-						{
-								break;
-						}
-						printf("%c", e->name[i]);
-						name_holder[j] = e->name[i];
-						j++;
-				}
-				printf(".");
-				name_holder[j] = '.';
+
+		for(i = 0; i < 8; i++){
+			if(e->name[i] != ' '){
+				name_holder[j] = e->name[i];
 				j++;
-				for (i = 0; i < 3; i++)
-				{
-						if (e->ext[i] < ' ')
-						{
-								break;
-						}
-						printf("%c", e->ext[i]);
-						name_holder[j] = e->ext[i];
-						j++;
-				}
-				printf(" (%x)", e->attrib);
-				for (i = 0; i < 10; i++)
-				{
-						printf("%2x", e->zero[i]);
-				}
-				printf(" time: %hu date: %hu start: %hu length: %ld\n",
-						toShort(e->time),
-						toShort(e->date), toShort(e->start), toLong(e->length));
+			}
 		}
+
+		name_holder[j] = '.';
+		j++;
+
+		for(i = 0; i < 3; i++){
+			if(e->ext[i] != ' '){
+				name_holder[j] = e->ext[i];
+				j++;
+			}
+		}
+
+		name_holder[j] = '\0';
+
+}
+
+/* Get the name of a folder without an extention */
+int get_folder_name(dirEntry * e, char *name_holder) {
+		int i, j;
+		j = 0;
+
+		for(i = 0; i < 8; i++){
+			if(e->name[i] != ' '){
+				name_holder[j] = e->name[i];
+				j++;
+			}
+		}
+
+		name_holder[j] = '\0';
+
 }
 
 /* The following code should obtain the total actual number of clusters
@@ -223,6 +216,7 @@ int followDirEntry(dirEntry *e, unsigned short * sFAT) {
 				next = sFAT[cur];
 				printf("%d ", next);
 				cur = next;
+
 		} while (next && (next < 0x0FF0) && (nclusters < nexpected));
 		printf("\nNclusters = %d\n", nclusters);
 		return nclusters;
@@ -278,7 +272,8 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 {
 	FILE *pFile;
 	int i, j;
-	char * buffer = NULL, * filename[12];
+	size_t buffersize;
+	char * buffer = NULL, * filename[12], * foldername[8];
 	int nclusters = 0;
 	for (j = i = 0; i < Nentries; i = j + 1)
 	{
@@ -298,31 +293,34 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 					if (buffer && (dirs[i].attrib & 0x10) && (nclusters > 0))
 					{
 							int N;
-							/* this must be another directory
-								 follow it now */
-							get_file_name(dirs, filename);
-							printf("writing folder %s\n", filename);
-							mkdir((const char *)dirs[i].name,
-								S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+							/* Creating the new found directory and entering it. */
+							get_folder_name(dirs + i, foldername);
+							mkdir(foldername, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+							chdir(foldername);
 
 
 							N = nclusters * clusterSize / sizeof(dirEntry);
 							printf("Reading directory\n");
 							readDirectory((dirEntry *) buffer, N, sFAT);
 
-					}else if (buffer){
-							get_file_name(dirs, filename);
+					}else{
+						get_file_name(dirs + i, filename);
 
-							printf("writing file %s\n", filename);
-							printDirEntry(dirs);
-							printf("end writing file\n");
-							/* Create a file when not existing */
-							pFile = fopen(filename, "ab+");
-							fwrite(buffer , 1 , clusterSize, pFile);
-							fclose(pFile);
+						/* Create a file when not existing */
+						pFile = fopen(filename, "ab+");
+
+						/* buffersize should replace (nclusers * clusterSize) in the future */
+						buffersize = toLong(dirs->length);
+
+						fwrite(buffer , 1 , nclusters * clusterSize, pFile);
+						fclose(pFile);
 					}
+					
+					
 			}
+			
 	}
+	chdir("..");
 	free(buffer);
 	return 0;
 }
@@ -379,6 +377,7 @@ int main(int argc, char * argv[]) {
 		int nread;
 		dirEntry *dirs;
 
+
 		printf("size of bootsector = %u\n", sizeof(BPB));
 		if (argc > 1)
 		{
@@ -393,6 +392,10 @@ int main(int argc, char * argv[]) {
 				printf("Read error %d\n", rv);
 				exit(-2);
 		}
+
+		mkdir("disk", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		chdir("disk");
+
 		printf("Serial nr. %u-%u-%u\n", bootsector.vsn[0],
 						 bootsector.vsn[1], bootsector.vsn[2]);
 		printf("bps = %hu\n", bps = toShort(bootsector.bps));
