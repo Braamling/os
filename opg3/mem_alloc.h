@@ -1,5 +1,11 @@
 /* Dit is de mem_alloc.h file zoals beloofd in de practicumhandleiding.
  *
+ * The only changes we (Bas van den Heuvel & Bram van den Akker) have made, are
+ * styling of the comments. We have copied the comments for all these functions
+ * to our mem_alloc.c file. All our other comments are in English, but since
+ * these comments weren't our responsibility, we have decided not to translate
+ * them.
+ *
  * Auteur: Dick van Albada
  * Faculteit Wiskunde en Informatica
  * Universiteit van Amsterdam
@@ -7,7 +13,6 @@
  * Versie: 0.01 */
 
 #define MEM_SIZE (32768)
-#define ADDR_SPACE 256
 
 /* mem_init wordt aangeroepen voor enige andere procedure uit deze file wordt
  * gebruikt. Hij initialseert de memory-manager en zorgt ervoor dat het te
