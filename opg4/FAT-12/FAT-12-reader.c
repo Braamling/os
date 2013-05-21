@@ -85,6 +85,8 @@ static int bps = 512;
 static int spc = 2;
 static int dataStart = 0;
 
+static int *used_addresses;
+
 /* The file identified for the input file is stored here,
 	 as a global identifier
 */
@@ -142,7 +144,7 @@ void printDirEntry(dirEntry * e) {
 }
 
 /* Get the name of a file with extention */
-int get_file_name(dirEntry * e, char *name_holder) {
+void get_file_name(dirEntry * e, char *name_holder) {
 		int i, j;
 		j = 0;
 
@@ -168,7 +170,7 @@ int get_file_name(dirEntry * e, char *name_holder) {
 }
 
 /* Get the name of a folder without an extention */
-int get_folder_name(dirEntry * e, char *name_holder) {
+void get_folder_name(dirEntry * e, char *name_holder) {
 		int i, j;
 		j = 0;
 
@@ -229,10 +231,11 @@ bufferFile(dirEntry *e, unsigned short * sFAT, char ** buffer) {
 /* First find number of clusters in file */
 		int cur = toShort(e->start);
 		int nclusters = followDirEntry(e, sFAT);
-		int nbytes;
+		int nbytes, available_space;
 		int nread = 0;
 		int next;
 		int offset = 0;
+		long entry_length = toLong(e->length);
 		(*buffer) = NULL;
 		if (nclusters == 0) return 0;
 
@@ -253,12 +256,16 @@ bufferFile(dirEntry *e, unsigned short * sFAT, char ** buffer) {
 				next = sFAT[cur];
 				cur = next;
 		} while (next && (next < 0x0FF0) && (nread < nclusters));
-		if (next < 0x0FF0)
-		{
+
+		/* Find the space that is available for a file. */
+		available_space = clusterSize * nread;
+
+		if ((next < 0x0FF0) || (available_space < entry_length)) {
 		/* not a normal end of chain */
 				printf("Broken file, read %d clusters, expected %d,"
+							 " available space %d, file size: %ld "
 							 "next cluster would be at %d\n",
-								nread, nclusters, next);
+								nread, nclusters, available_space, entry_length, next);
 				return -2;
 		}
 		return nclusters;
@@ -268,12 +275,11 @@ bufferFile(dirEntry *e, unsigned short * sFAT, char ** buffer) {
 	 Files are read in, allowing further processing if desired
 */
 int 
-readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
-{
+readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT) {
 	FILE *pFile;
 	int i, j;
-	size_t buffersize;
-	char * buffer = NULL, * filename[12], * foldername[8];
+/*	size_t buffersize; */
+	char * buffer = NULL, filename[12], foldername[8];
 	int nclusters = 0;
 	for (j = i = 0; i < Nentries; i = j + 1)
 	{
@@ -289,6 +295,14 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 			} else if (dirs[i].name[0] > ' ' && (dirs[i].name[0] != '.'))
 			{
 					free(buffer);
+
+					/* Check if a file is already extraced elsewere. If the file is not
+					 * yet extracted it will be marked as extracted. */
+					if (used_addresses[toShort(dirs[i].start)] == 1)
+						printf("File is already extracted elsewere\n");
+					else
+						used_addresses[toShort(dirs[i].start)] = 1;
+
 					nclusters = bufferFile(dirs + i, sFAT, &buffer);
 					if (buffer && (dirs[i].attrib & 0x10) && (nclusters > 0))
 					{
@@ -296,7 +310,10 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 							/* Creating the new found directory and entering it. */
 							get_folder_name(dirs + i, foldername);
 							mkdir(foldername, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-							chdir(foldername);
+							if(chdir(foldername) == -1){
+								printf("Error creating folder");
+								return -1;
+							}
 
 
 							N = nclusters * clusterSize / sizeof(dirEntry);
@@ -309,10 +326,7 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 						/* Create a file when not existing */
 						pFile = fopen(filename, "ab+");
 
-						/* buffersize should replace (nclusers * clusterSize) in the future */
-						buffersize = toLong(dirs->length);
-
-						fwrite(buffer , 1 , nclusters * clusterSize, pFile);
+						fwrite(buffer , 1 , toLong(dirs[i].length), pFile);
 						fclose(pFile);
 					}
 					
@@ -320,16 +334,16 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT)
 			}
 			
 	}
-	chdir("..");
 	free(buffer);
+	if(chdir("..") == -1){
+		return -1;
+	}
 	return 0;
 }
 
 /* Convert a 12 bit FAT to 16bit short integers
 */
-void
-expandFAT(uint8_t * FAT, unsigned short * sFAT, int entries)
-{
+void expandFAT(uint8_t * FAT, unsigned short * sFAT, int entries){
 		int i;
 		int j;
 		for (i = 0, j = 0; i < entries; i += 2, j += 3)
@@ -339,12 +353,11 @@ expandFAT(uint8_t * FAT, unsigned short * sFAT, int entries)
 		}
 }
 
+
 /* Convert a FAT represented as 16 bit shorts back to 12 bits to
 	 allow rewriting the FAT
 */
-void
-shrinkFAT(uint8_t * FAT, unsigned short * sFAT, int entries)
-{
+void shrinkFAT(uint8_t * FAT, unsigned short * sFAT, int entries){
 		int i;
 		int j;
 		for (i = 0, j = 0; i < entries; i += 2, j += 3)
@@ -353,6 +366,20 @@ shrinkFAT(uint8_t * FAT, unsigned short * sFAT, int entries)
 				FAT[j + 1] = ((sFAT[i] & 0x0f00) >> 8) + ((sFAT[i + 1] & 0x000f) << 4);
 				FAT[j + 2] = (sFAT[i + 1] & 0x0ff0) >> 4;
 		}
+}
+
+/* Check the fat tables for inconsistencises */
+int check_fat_tables(unsigned short *sFAT1, unsigned short *sFAT2, int entries){
+		int i, consistent;
+		consistent = 1;
+		for (i = 0; i < entries; i++){
+				if(sFAT1[i] != sFAT2[i]){
+					printf("sFAT entry nr %d is inconsistent. %ud != %ud\n", i,
+							sFAT1[i], sFAT2[i]);
+					consistent = 0;
+				}
+		}	
+		return consistent;
 }
 
 /* We'll allow for at most two FATs on a floppy, both as 12 bit values and
@@ -377,8 +404,8 @@ int main(int argc, char * argv[]) {
 		int nread;
 		dirEntry *dirs;
 
-
-		printf("size of bootsector = %u\n", sizeof(BPB));
+ 
+		printf("size of bootsector = %lu\n", sizeof(BPB));
 		if (argc > 1)
 		{
 				fid = open(argv[1], O_RDONLY);
@@ -393,8 +420,12 @@ int main(int argc, char * argv[]) {
 				exit(-2);
 		}
 
+
 		mkdir("disk", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-		chdir("disk");
+		if(chdir("disk") == -1){
+			printf("Error creating folder.");
+			return -1;
+		}
 
 		printf("Serial nr. %u-%u-%u\n", bootsector.vsn[0],
 						 bootsector.vsn[1], bootsector.vsn[2]);
@@ -429,6 +460,8 @@ int main(int argc, char * argv[]) {
 		clusterSize = spc * bps;
 		printf("entries = %u, dataSectors = %u, clusters = %u\n", entries,
 					 dataSectors, clusters);
+		used_addresses = calloc(dataSectors, sizeof(int));
+
 		FAT1 = malloc(NFATbytes);
 		FAT2 = malloc(NFATbytes);
 		nread = read(fid, FAT1, NFATbytes);
@@ -448,6 +481,7 @@ int main(int argc, char * argv[]) {
 		sFAT2 = calloc(entries + 1, sizeof(unsigned short));
 		expandFAT(FAT1, sFAT1, entries);
 		expandFAT(FAT2, sFAT2, entries);
+		check_fat_tables(sFAT1, sFAT2, entries);
 		printf("FAT1: %hu  %hu  %hu  %hu  %hu  %hu\n", sFAT1[0],
 						sFAT1[1], sFAT1[2], sFAT1[3], sFAT1[4], sFAT1[5]);
 		printf("FAT2: %hu  %hu  %hu  %hu  %hu  %hu\n", sFAT2[0],
