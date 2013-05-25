@@ -5,29 +5,31 @@
 
 \begin{document}
 \section{Introduction}
-This report is for the course Operating Systems(UvA), we will discuss FAT12 filesystems extracting FAT12 partitions and finding and solving data corruptions. For the assignment we got a skeletoon code, to which we added extraction funtionalities and improved data corruption detection within the code. Solving the data corruptions was not part of the assignment, we will only be discussing theoratical solutions.
-\section{Overview of the FAT12 filesystem}
-FAT12 was introduced in august 1980, and was designed to be a floppydisk filesystem, but was later used as a hard disk filesystem. The newest version of the FAT filesystem, FAT32 is widely used on USB drives.
+This report is for the course Operating Systems(UvA), we will discuss FAT12 file systems extracting FAT12 partitions and finding and solving data corruptions. For the assignment we got a skeleton code, to which we added extraction funtionalities and improved data corruption detection within the code. Solving the data corruptions was not part of the assignment, we will only be discussing theoretical solutions.
+\section{Overview of the FAT12 file system}
+FAT12 was introduced in august 1980, and was designed to be a floppy disk file system, but was later used as a hard disk file system. The newest version of the FAT file system, FAT32 is widely used on USB drives.
 \section{FAT12 file extraction}
-The extraction begins with going through the FAT12 table and buffering the found files, then the buffers are written to correct folders. When a new folder is found in this process it is created. Corupted files will not be handeled and a message is returned with the type of corruption and the name of the corrupted file or the locations of the clusters.
+The extraction begins with going through the FAT12 table and buffering the found files, then the buffers are written to correct folders. When a new folder is found in this process it is created. Corrupted files will not be handled and a message is returned with the type of corruption and the name of the corrupted file or the locations of the clusters.
 \section{Data corruption in FAT12}
 \subsection{Inconsistency in the two file allocation tables}
-Every FAT filesystem has two file allocation tables that should be identical, when this is not the case one of the two inconsistent and th
-ere is a high risk of corrupt data.
+Every FAT file system has two file allocation tables that should be identical, when this is not the case one of the two is inconsistent and there is a high risk of corrupt data.
 \subsection{Empty assigned clusters}
 When there are more clusters assigned to a file then needed, whilst retrieving a file,this indicates missing file data. 
 \subsection{More clusters used then assigned}
 When the length in the DIRENTRY is exceeded but there are still more references to other clusters, this is an indication of corrupted administration.
 \subsection{Double cluster references}
-When there are two DIRENTRIES refering to one set of clusters this indicates a administration corruption. Multiple references to a set of clusters is not supported.
+When there are two DIRENTRIES referring to one set of clusters this indicates a administration corruption. Multiple references to a set of clusters is not supported.
 \subsection{Looping references}
 When a cluster references to a previously read cluster, this would create a infinite loop, to avoid getting stuck in the loop, the program stops when the the number of clusters to go through is reached.
 \subsection{The root and parent folders}
 Every folder in a fat file system has a . and a .. folder reference. The . goes to the root of the file system and de .. goes to the parent of the current folder. These two references should not be present in the root folder.
-\subsection{Filenames}
-Filenames should not contain unsupported or illegal characters and should have a positive length.
+\subsection{File names}
+File names should not contain unsupported or illegal characters and should have a positive length.
 \subsection{Folder sizes}
 Folders have a size of zero, different sizes indicate corruption.
+\subsection{Deleted data}
+Files or folders could be marked as deleted even when they should not. This could lead to unwanted data loss. 
+
 \section{Solutions to corruptions}
 \subsection{Inconsistency in the two file allocation tables}
 Search for corruptions in both the file allocation tables and keep the one that has none.
@@ -36,17 +38,37 @@ The clusters must be recovered with the help of data recovery tools, chances of 
 \subsection{More clusters used then assigned}
 Ignore the length in the DIRENTRY and try to find the end of the clusters.
 \subsection{Double cluster references}
-In this case there are two possibilities: One file it's direntry is overridden by another and therefor cannot be located on the disk. The other one is that there are just two direntries for one file. The first case cannot be solved unless there is information available about the file and the clusters are manually searched. The second case not solvable. The file exists in two places. The user should deside which one to keep, no data is lost.
+In this case there are two possibilities: One file it's direntry is overridden by another and therefor cannot be located on the disk. The other one is that there are just two direntries for one file. The first case cannot be solved unless there is information available about the file and the clusters are manually searched. The second case not solvable. The file exists in two places. The user should decide which one to keep, no data is lost.
 \subsection{Looping references}
 Build in safeguards to prevent systems crashes caused by infinite loops when reading or extracting the files. The only possible solution is manually searching for the remaining clusters.
 \subsection{The root and parent folders}
 When . or .. folders are found in the root folders these should be deleted. When they are not found in sub folders they should be added. Parent folders can be found by searching through the rest of the system.
 \subsection{Filenames}
-Corrupted filenames should be fixed by using placeholders or querying the user for a new filename.
+Corrupted file names should be fixed by using placeholders or querying the user for a new file name.
 \subsection{Folder sizes}
 When a folder is found with another size of then zero the size should be simply changed to zero and any linked clusters should be deleted.
+\subsection{Deleted data}
+Files and folders that are marked as deleted could be revised by the user to check if they should really be marked as deleted.
+
 \section{Results}
+\subsection{Image 1}
+Image 1 has two inconsistent file tables. The files folder is also marked as deleted which might be a direct result of this inconsistency. 
+\subsection{Image 2}
+Image 2 has 8 inconsistent file table entries. The file shirt-bl.png has an loop and the file stick.gif is bigger then the amount of available clusters.
+\subsection{Image 3}
+Image 3 is the correct image. 
+\subsection{Image 4}
+In image 4 the file shirt-bl.png is extracted twice and there are 3 broken files. The files are bigger than the amount of clusters assigned. 
+\subsection{Image 5}
+The File allocation table of image 5 has one inconsistent entry.
+Spinnato.pdf is also inconsistent, there is a bad reference at the end.
+\subsection{Image 6}
+The File allocation table of image 6 has two inconsistent entries. There is one broken file and one broken folder due to bad references.
+\subsection{Image 7}
+There are two broken files in image 7: One because the file is bigger then the assigned clusters and one because of a bad cluster reference. Readme.txt is extracted twice.
+\subsection{Image 8}
+Image 8 contains a lot of deleted files. This could be counted as an inconsistency but cannot be directly marked as inconsistent. Readme.txt is also extracted twice in image 8. 
 
 \section{Conclusion}
-Fat12 file systems are far from perfect. But they give great perspective in how file systems work. The corruptions found can be caused by alot of things and could occure on other file systems as well. Solving these corruptions can be a pain in the ass, preventing data loss by regularly making backups is alot easier then recovering lost data. 
+Fat12 file systems are far from perfect. But they give great perspective in how file systems work. The corruptions found can be caused by a lot of things and could occur on other file systems as well. Solving these corruptions can be a pain in the ass, preventing data loss by regularly making backups is a lot easier then recovering lost data. 
 \end{document}
