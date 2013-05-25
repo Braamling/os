@@ -77,6 +77,11 @@ typedef struct DIRENTRY
 		uint8_t length[4];
 } dirEntry;
 
+/* Colors for errors */
+#define NRM  "\x1B[0m"
+#define RED  "\x1B[31m"
+#define YEL  "\x1B[33m"
+
 /* The following are default values. Most are recomputed on basis of the 
 	 information in the bootblock.
 */
@@ -144,20 +149,28 @@ void printDirEntry(dirEntry * e) {
 }
 
 /* Get the name of a file with extention */
-void get_file_name(dirEntry * e, char *name_holder) {
+void get_file_name(dirEntry * e, char *name_holder){
 		int i, j;
 		j = 0;
 
+		/* Get the filename */
 		for(i = 0; i < 8; i++){
-			if(e->name[i] != ' '){
 				name_holder[j] = e->name[i];
-				j++;
-			}
+				if(i < 7)
+					j++;
 		}
 
+		/* Delete trailing spaces */
+		while(name_holder[j] == ' '){
+			j--;
+		}
+
+
+		j++;
 		name_holder[j] = '.';
 		j++;
 
+		/* Get the extention */
 		for(i = 0; i < 3; i++){
 			if(e->ext[i] != ' '){
 				name_holder[j] = e->ext[i];
@@ -166,6 +179,12 @@ void get_file_name(dirEntry * e, char *name_holder) {
 		}
 
 		name_holder[j] = '\0';
+
+		j = 0; 
+		while(name_holder[j] != '\0'){
+			printf("%c", name_holder[j]);
+			j++;
+		}
 
 }
 
@@ -209,7 +228,7 @@ int followDirEntry(dirEntry *e, unsigned short * sFAT) {
 		}
 		if (cur < 2)
 		{
-				printf("Not a valid starting cluster\n");
+				printf("%s[error]Not a valid starting cluster%s\n", RED, NRM);
 				return 0;
 		}
 		do
@@ -246,8 +265,8 @@ bufferFile(dirEntry *e, unsigned short * sFAT, char ** buffer) {
 				if (clusterSize !=
 								(nbytes = read(fid, (*buffer) + offset, clusterSize)))
 				{
-						printf("Disk read error, expected %d bytes, read %d\n",
-									 clusterSize, nbytes);
+						printf("%s[error]Disk read error, expected %d bytes, read %d%s\n",
+									 RED, clusterSize, nbytes, NRM);
 						printf("Attempting to read cluster %d\n", cur);
 						return -1;
 				}
@@ -262,12 +281,24 @@ bufferFile(dirEntry *e, unsigned short * sFAT, char ** buffer) {
 
 		if ((next < 0x0FF0) || (available_space < entry_length)) {
 		/* not a normal end of chain */
-				printf("Broken file, read %d clusters, expected %d,"
+			if((int)e->attrib == 32){
+				printf("%s[error]Broken file, read %d clusters, expected %d,"
 							 " available space %d, file size: %ld "
-							 "next cluster would be at %d\n",
-								nread, nclusters, available_space, entry_length, next);
+							 "next cluster would be at %d%s\n",
+								RED, nread, nclusters, available_space, entry_length, next,
+								NRM);
 				return -2;
+			}
+			if((int)e->attrib == 16){
+				printf("%s[error]Broken folder, read %d clusters, expected %d,"
+							 " available space %d, file size: %ld "
+							 "next cluster would be at %d%s\n",
+								RED, nread, nclusters, available_space, entry_length, next,
+								NRM);
+				return -2;
+			}
 		}
+
 		return nclusters;
 }
 		
@@ -291,7 +322,7 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT) {
 			}
 			if ((dirs[i].name[0] == 0x05) || (dirs[i].name[0] == 0xe5))
 			{
-					printf("Deleted entry\n");
+					printf("%s[Warning]Deleted entry%s\n", YEL, NRM);
 			} else if (dirs[i].name[0] > ' ' && (dirs[i].name[0] != '.'))
 			{
 					free(buffer);
@@ -299,7 +330,7 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT) {
 					/* Check if a file is already extraced elsewere. If the file is not
 					 * yet extracted it will be marked as extracted. */
 					if (used_addresses[toShort(dirs[i].start)] == 1)
-						printf("File is already extracted elsewere\n");
+						printf("%s[Error]File is already extracted elsewere%s\n", RED, NRM);
 					else
 						used_addresses[toShort(dirs[i].start)] = 1;
 
@@ -311,7 +342,7 @@ readDirectory(dirEntry *dirs, int Nentries, unsigned short * sFAT) {
 							get_folder_name(dirs + i, foldername);
 							mkdir(foldername, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 							if(chdir(foldername) == -1){
-								printf("Error creating folder");
+								printf("%s[Error]Error creating folder%s\n", RED, NRM);
 								return -1;
 							}
 
@@ -374,8 +405,8 @@ int check_fat_tables(unsigned short *sFAT1, unsigned short *sFAT2, int entries){
 		consistent = 1;
 		for (i = 0; i < entries; i++){
 				if(sFAT1[i] != sFAT2[i]){
-					printf("sFAT entry nr %d is inconsistent. %ud != %ud\n", i,
-							sFAT1[i], sFAT2[i]);
+					printf("%s[Error]sFAT entry nr %d is inconsistent. %ud != %ud%s\n", 
+							RED, i,	sFAT1[i], sFAT2[i], NRM);
 					consistent = 0;
 				}
 		}	
@@ -411,19 +442,19 @@ int main(int argc, char * argv[]) {
 				fid = open(argv[1], O_RDONLY);
 		} else
 		{
-				printf("Need one file argument\n");
+				printf("%s[Error]Need one file argument %d%s\n", RED, rv, NRM);
 				exit(-1);
 		}
 		if ((sizeof(BPB) != (rv = read(fid, &bootsector, sizeof(BPB)))))
 		{
-				printf("Read error %d\n", rv);
+				printf("%s[Error]Read error %d%s\n", RED, rv, NRM);
 				exit(-2);
 		}
 
 
 		mkdir("disk", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		if(chdir("disk") == -1){
-			printf("Error creating folder.");
+			printf("%s[Error]Error creating folder.%s\n", RED, NRM);
 			return -1;
 		}
 
@@ -467,14 +498,14 @@ int main(int argc, char * argv[]) {
 		nread = read(fid, FAT1, NFATbytes);
 		if (nread != NFATbytes)
 		{
-				printf("Unexpected EOF\n");
+				printf("%s[Error]Unexpected EOF%s\n", RED, NRM);
 		}
 		for (i = 1; i < bootsector.NFats; i++)
 		{
 				nread = read(fid, FAT2, NFATbytes);
 				if (nread != NFATbytes)
 				{
-						printf("Unexpected EOF\n");
+						printf("%s[Error]Unexpected EOF%s\n", RED, NRM);
 				}
 		}
 		sFAT1 = calloc(entries + 1, sizeof(unsigned short));
@@ -495,7 +526,7 @@ int main(int argc, char * argv[]) {
 		nread = read(fid, dirs, bps * NdirSectors);
 		if (nread != bps * NdirSectors)
 		{
-				printf("Unexpected EOF\n");
+				printf("%s[Error]Unexpected EOF%s\n", RED, NRM);
 		}
 		readDirectory(dirs, Ndirs, sFAT1);
 		
