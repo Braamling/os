@@ -47,7 +47,7 @@
 \tableofcontents
 \pagebreak
 \section{Introduction}
-This report is for the course Operating Systems(UvA), we will discuss FAT12 file systems extracting FAT12 partitions and finding and solving data corruptions. For the assignment we got a skeleton code, to which we added extraction funtionalities and improved data corruption detection within the code. Solving the data corruptions was not part of the assignment, we will only be discussing theoretical solutions.
+This report is for the course Operating Systems(UvA), we will discuss FAT12 file systems extracting FAT12 partitions and finding and solving data corruptions. For the assignment we got a skeleton code, to which we added extraction functionalities and improved data corruption detection within the code. Solving the data corruptions was not part of the assignment, we will only be discussing theoretical solutions.
 \section{Overview of the FAT12 file system}
 FAT12 was introduced in august 1980, and was designed to be a floppy disk file system, but was later used as a hard disk file system. The newest version of the FAT file system, FAT32 is widely used on USB drives.
 \section{FAT12 file extraction}
@@ -80,7 +80,7 @@ The clusters must be recovered with the help of data recovery tools, chances of 
 \subsection{More clusters used then assigned}
 Ignore the length in the DIRENTRY and try to find the end of the clusters.
 \subsection{Double cluster references}
-In this case there are two possibilities: One file it's direntry is overridden by another and therefor cannot be located on the disk. The other one is that there are just two direntries for one file. The first case cannot be solved unless there is information available about the file and the clusters are manually searched. The second case not solvable. The file exists in two places. The user should decide which one to keep, no data is lost.
+In this case there are two possibilities: One file it's direntry is overridden by another and therefore cannot be located on the disk. The other one is that there are just two direntries for one file. The first case cannot be solved unless there is information available about the file and the clusters are manually searched. The second case not solvable. The file exists in two places. The user should decide which one to keep, no data is lost.
 \subsection{Looping references}
 Build in safeguards to prevent systems crashes caused by infinite loops when reading or extracting the files. The only possible solution is manually searching for the remaining clusters.
 \subsection{The root and parent folders}
@@ -112,5 +112,5 @@ There are two broken files in image 7: One because the file is bigger then the a
 Image 8 contains a lot of deleted files. This could be counted as an inconsistency but cannot be directly marked as inconsistent. Readme.txt is also extracted twice in image 8. 
 
 \section{Conclusion}
-Fat12 file systems are far from perfect. But they give great perspective in how file systems work. The corruptions found can be caused by a lot of things and could occur on other file systems as well. Solving these corruptions can be a pain in the ass, preventing data loss by regularly making backups is a lot easier then recovering lost data. 
+FAT12 file systems are far from perfect. But they give great perspective in how file systems work. The corruptions found can be caused by a lot of things and could occur on other file systems as well. Solving these corruptions can be a pain in the ass, preventing data loss by regularly making backups is a lot easier then recovering lost data. 
 \end{document}
